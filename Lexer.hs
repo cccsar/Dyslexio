@@ -5265,24 +5265,34 @@ alex_actions = array (0 :: Int, 20)
 {-# LINE 29 "Lexer.x" #-}
  
 
-type LexResult = Either Err.TokenError Tk.Token
+type LexerContent = Either Err.TokenError Tk.ContextToken
 
-buildToken :: Tk.Token -> AlexPosn -> String -> Tk.ContextToken
-buildToken espTk (AlexPn _ r c) str = tk
+buildToken :: Tk.Token -> AlexPosn -> String -> LexerContent 
+buildToken espTk (AlexPn _ r c) str = Right tk
     where 
         tk = Tk.CtxToken {
-            Tk.pos = Tk.Pos (r,c),
-            Tk.content = str,
-            Tk.tk = espTk
+            Tk.position   = Tk.Pos (r,c),
+            Tk.string     = str,
+            Tk.content    = chooseContent espTk str,
+            Tk.tk         = espTk 
         }
 
-buildError :: AlexPosn -> String -> Err.TokenError
-buildError (AlexPn _ r c) str = err 
+-- Selects propper content assignation to token
+chooseContent :: TK.Token -> String -> Tk.Content 
+chooseContent token string = case token of 
+    Tk.TkInteger -> Tk.Integer (read string :: Int)
+    Tk.TkTrue    -> Tk.Integer (read string :: Bool)
+    Tk.TkFalse   -> Tk.Integer (read string :: Bool)
+    Tk.TkId      -> Tk.Id string
+
+buildError :: AlexPosn -> String -> LexerContent 
+buildError (AlexPn _ r c) str = Left err 
     where
         err = Err.TkErr { 
             Err.name = str,
             Err.pos = Tk.Pos (r,c)
         }
+
 
 alex_action_1 = \posn str-> Right $ buildToken Tk.TkNum posn str
 alex_action_2 = \posn str-> Right $ buildToken Tk.TkBool posn str

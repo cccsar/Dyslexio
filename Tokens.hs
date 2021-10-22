@@ -2,23 +2,25 @@ module Tokens where
 
 newtype Position = Pos (Int,Int) deriving Show
 
+data Content = Bool Bool | Integer Int | Id String deriving Show
+
 data ContextToken = CtxToken
-    { pos :: Position 
-    , content :: String
+    { position :: Position 
+    , string :: String
+    , stringContent :: Content
     , tk :: Token
     } deriving (Show)
 
 data Token
-    -- reserved words
+    -- Reserved words
     = TkNum 
     | TkBool 
 
-    -- values
+    -- Constants
     | TkInteger
     | TkTrue
     | TkFalse
 
-    -- ids
+    -- Ids
     | TkId
-
-    deriving (Show)
+    deriving Show
