@@ -1,8 +1,9 @@
 { 
 module Lexer where
 
-import qualified Tokens as Tk (Token(..), ContextToken(..), Position(..))
+import qualified Tokens as Tk (Token(..), ContextToken(..), Position(..), Content (..))
 import qualified Error as Err
+import Data.Char (toUpper)
 }
 
 %wrapper "posn"
@@ -13,16 +14,16 @@ $alpha = [a-zA-Z]
 tokens :-
     $white+           ;
                        
-    int                                 {\posn str-> Right $ buildToken Tk.TkNum posn str}
-    bool                                {\posn str-> Right $ buildToken Tk.TkBool posn str}
+    int                                 {\posn str-> buildToken Tk.TkNum posn str}
+    bool                                {\posn str-> buildToken Tk.TkBool posn str}
                          
-    true                                {\posn str-> Right $ buildToken Tk.TkTrue posn str }
-    false                               {\posn str-> Right $ buildToken Tk.TkFalse posn str }
-    [\-]{0,1}$digit+                    {\posn str-> Right $ buildToken Tk.TkInteger posn str } 
+    true                                {\posn str-> buildToken Tk.TkTrue posn str }
+    false                               {\posn str-> buildToken Tk.TkFalse posn str }
+    [\-]{0,1}$digit+                    {\posn str-> buildToken Tk.TkInteger posn str } 
     
-    ([$alpha\_]){1,}[$alpha\_$digit]*   {\posn str -> Right $ buildToken Tk.TkId posn str }
+    ([$alpha\_]){1,}[$alpha\_$digit]*   {\posn str-> buildToken Tk.TkId posn str }
 
-    .                                   {\posn str-> Left $ buildError posn str}
+    .                                   {\posn str-> buildError posn str}
 
 
 
@@ -30,24 +31,31 @@ tokens :-
 
 type LexerContent = Either Err.TokenError Tk.ContextToken
 
+-- Given a Token, it's context information and the related string
+-- Creates the proper tokenized ouput.
 buildToken :: Tk.Token -> AlexPosn -> String -> LexerContent 
 buildToken espTk (AlexPn _ r c) str = Right tk
     where 
         tk = Tk.CtxToken {
-            Tk.position   = Tk.Pos (r,c),
-            Tk.string     = str,
-            Tk.content    = chooseContent espTk str,
-            Tk.tk         = espTk 
+            Tk.position      = Tk.Pos (r,c),
+            Tk.string        = str,
+            Tk.stringContent = chooseContent espTk str,
+            Tk.tk            = espTk 
         }
 
--- Selects propper content assignation to token
-chooseContent :: TK.Token -> String -> Tk.Content 
+-- Given a Token and a string, it propperly assigns context to Token that require it.
+chooseContent :: Tk.Token -> String -> Maybe Tk.Content 
 chooseContent token string = case token of 
-    Tk.TkInteger -> Tk.Integer (read string :: Int)
-    Tk.TkTrue    -> Tk.Integer (read string :: Bool)
-    Tk.TkFalse   -> Tk.Integer (read string :: Bool)
-    Tk.TkId      -> Tk.Id string
+    Tk.TkInteger -> Just $ Tk.Integer (read string :: Int)
+    Tk.TkTrue    -> Just $ adaptBool string
+    Tk.TkFalse   -> Just $ adaptBool string 
+    Tk.TkId      -> Just $ Tk.Id string
+    _            -> Nothing
+    where
+        adaptBool bl = let new =  (toUpper $ head bl) : tail bl  
+                       in Tk.Bool (read new :: Bool)
 
+-- Handles creation of invalid input.
 buildError :: AlexPosn -> String -> LexerContent 
 buildError (AlexPn _ r c) str = Left err 
     where

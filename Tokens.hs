@@ -7,7 +7,7 @@ data Content = Bool Bool | Integer Int | Id String deriving Show
 data ContextToken = CtxToken
     { position :: Position 
     , string :: String
-    , stringContent :: Content
+    , stringContent :: Maybe Content
     , tk :: Token
     } deriving (Show)
 

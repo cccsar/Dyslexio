@@ -4,8 +4,9 @@
  
 module Lexer where
 
-import qualified Tokens as Tk (Token(..), ContextToken(..), Position(..))
+import qualified Tokens as Tk (Token(..), ContextToken(..), Position(..), Content (..))
 import qualified Error as Err
+import Data.Char (toUpper)
 
 #if __GLASGOW_HASKELL__ >= 603
 #include "ghcconfig.h"
@@ -5262,29 +5263,37 @@ alex_actions = array (0 :: Int, 20)
   , (0,alex_action_7)
   ]
 
-{-# LINE 29 "Lexer.x" #-}
+{-# LINE 30 "Lexer.x" #-}
  
 
 type LexerContent = Either Err.TokenError Tk.ContextToken
 
+-- Given a Token, it's context information and the related string
+-- Creates the proper tokenized ouput.
 buildToken :: Tk.Token -> AlexPosn -> String -> LexerContent 
 buildToken espTk (AlexPn _ r c) str = Right tk
     where 
         tk = Tk.CtxToken {
-            Tk.position   = Tk.Pos (r,c),
-            Tk.string     = str,
-            Tk.content    = chooseContent espTk str,
-            Tk.tk         = espTk 
+            Tk.position      = Tk.Pos (r,c),
+            Tk.string        = str,
+            Tk.stringContent = chooseContent espTk str,
+            Tk.tk            = espTk 
         }
 
--- Selects propper content assignation to token
-chooseContent :: TK.Token -> String -> Tk.Content 
+-- Given a Token and a string, it propperly assigns context to Token that require it.
+chooseContent :: Tk.Token -> String -> Maybe Tk.Content 
 chooseContent token string = case token of 
-    Tk.TkInteger -> Tk.Integer (read string :: Int)
-    Tk.TkTrue    -> Tk.Integer (read string :: Bool)
-    Tk.TkFalse   -> Tk.Integer (read string :: Bool)
-    Tk.TkId      -> Tk.Id string
+    Tk.TkInteger -> Just $ Tk.Integer (read string :: Int)
+    Tk.TkTrue    -> Just $ adaptBool string
+    Tk.TkFalse   -> Just $ adaptBool string 
+    Tk.TkId      -> Just $ Tk.Id string
+    _            -> Nothing
+    where
+        adaptBool bl = let new =  (toUpper $ head bl) : tail bl  
+                       in Tk.Bool (read new :: Bool)
 
+
+-- Handles creation of invalid input.
 buildError :: AlexPosn -> String -> LexerContent 
 buildError (AlexPn _ r c) str = Left err 
     where
@@ -5294,13 +5303,13 @@ buildError (AlexPn _ r c) str = Left err
         }
 
 
-alex_action_1 = \posn str-> Right $ buildToken Tk.TkNum posn str
-alex_action_2 = \posn str-> Right $ buildToken Tk.TkBool posn str
-alex_action_3 = \posn str-> Right $ buildToken Tk.TkTrue posn str 
-alex_action_4 = \posn str-> Right $ buildToken Tk.TkFalse posn str 
-alex_action_5 = \posn str-> Right $ buildToken Tk.TkInteger posn str 
-alex_action_6 = \posn str -> Right $ buildToken Tk.TkId posn str 
-alex_action_7 = \posn str-> Left $ buildError posn str
+alex_action_1 = \posn str-> buildToken Tk.TkNum posn str
+alex_action_2 = \posn str-> buildToken Tk.TkBool posn str
+alex_action_3 = \posn str-> buildToken Tk.TkTrue posn str 
+alex_action_4 = \posn str-> buildToken Tk.TkFalse posn str 
+alex_action_5 = \posn str-> buildToken Tk.TkInteger posn str 
+alex_action_6 = \posn str-> buildToken Tk.TkId posn str 
+alex_action_7 = \posn str-> buildError posn str
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
