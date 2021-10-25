@@ -4,8 +4,6 @@ import qualified Tokens as Tk
 import qualified Error as Err
 import qualified Lexer as L
 
-import Data.Either (partitionEithers)
-
 data UserState = UState 
     { tks :: [Either Err.TokenError Tk.ContextToken ]
     }
@@ -15,4 +13,5 @@ data UserState = UState
 lexer :: String -> [Either Err.TokenError Tk.ContextToken]
 lexer = L.alexScanTokens
 
-baseUserState = UState { tks = []}
+{- Constants -}
+baseUserState = UState {tks = []}

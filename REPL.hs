@@ -1,8 +1,9 @@
 module REPL where
 
-import Data.Either (partitionEithers)
 import System.Directory (doesFileExist)
+import Data.Either (partitionEithers)
 import System.Exit (exitSuccess)
+import Data.List (intersperse)
 
 import qualified Tokens as Tk
 import qualified Error as Err
@@ -29,14 +30,14 @@ choice ustate inp = case words inp of
 
         if rel then do
             content <- readFile (unwords xs)
-            -- Extend logic
+            -- Extend logic ###
             newTks  <- printLex content
             return $ ustate { BE.tks = newTks }
             else do
                 putStrLn "File does not exists"
                 return ustate 
 
-    [".failed"] -> do 
+    [".failed"] -> do  -- ###
         let (errs,_) = partitionEithers (BE.tks ustate)
 
         if null errs then do
@@ -47,7 +48,7 @@ choice ustate inp = case words inp of
                 mapM_ print errs
                 return ustate
 
-    [".reset"]  -> return $ ustate { BE.tks = [] } 
+    [".reset"]  -> return $ ustate { BE.tks = [] } -- ###
 
     ["."]       -> exitSuccess
 
@@ -58,7 +59,7 @@ choice ustate inp = case words inp of
 {- REPL Interface functions -}
 
 process :: String -> IO ()
-process tks = putStrLn $ "ERROR: " ++ tks ++ " Undefined interpretation."
+process tks = putStrLn $ "ERROR: " ++ tks ++ " ==> undefined interpretation"
 
 printLex :: String -> IO [Either Err.TokenError Tk.ContextToken]
 printLex str = do 
@@ -66,16 +67,37 @@ printLex str = do
         (errs,tkList) = partitionEithers scan
 
     if null errs then  do
-        mapM_ print tkList 
+        putStr $ "OK:lexer("++show str++") ==> "
+        putStr "[ "
+        mapM_ putStr (intersperse " , " . map show $ tkList)
+        putStrLn " ]"
         else do 
-            putStrLn "Errors: "
-            mapM_ print errs
+            putStr $ "ERROR:lexer("++show str++") ==> "
+            putStr "tokens invalidos de la entrada: [" 
+            mapM_ putStr (intersperse " , " . map show $ errs) 
+            putStrLn " ]"
     
     return scan
+
+{- Additional display functions -}
+
+-- Clears the screen
+clearScreen :: IO ()
+clearScreen = putStr "\ESC[2J"
+
+-- Moves to a position on the screen.
+goTo :: (Int,Int) -> IO ()
+goTo (x, y) = putStr $ "\ESC[" ++ show y ++ ";" ++ show x ++ "H"
+
+-- Clears the screen and goes to the beginning  of it.
+initializeDisplay :: IO ()
+initializeDisplay = do 
+    clearScreen 
+    goTo (0,0)
 
 {- Constants: messages, errors, warnings -}
 
 prompt :: String
 prompt = "Dyslexio> "
 
-intro = "Welcome to Dyslexio! your bset intrepetre for LIPS programming language"
+intro = "Welcome to Dyslexio! a good option to interpretate LIPS programming language"
