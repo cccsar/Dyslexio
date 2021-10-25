@@ -6,7 +6,7 @@ import qualified Lexer as L
 
 data UserState = UState 
     { tks :: [Either Err.TokenError Tk.ContextToken ]
-    }
+    } -- ###
 
 {- Relevant functions Virtual Machine -}
 

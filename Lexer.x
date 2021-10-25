@@ -21,7 +21,7 @@ tokens :-
     lazy                                { buildToken Tk.TkLazy }
                                          
      -- Constants                        
-    [\-]{0,1}$digit+                    { buildToken Tk.TkNum } 
+    [\-\+]{0,1}$digit+                  { buildToken Tk.TkNum } 
     true                                { buildToken Tk.TkTrue }
     false                               { buildToken Tk.TkFalse }
                                          
@@ -85,9 +85,15 @@ buildToken espTk (AlexPn _ r c) str = Right tk
 -- Given a Token and a string, it propperly assigns context to Token that require it.
 chooseContent :: Tk.Token -> String -> Maybe Tk.Content 
 chooseContent token string = case token of 
-    Tk.TkNum     -> Just $ Tk.Integer (read string :: Int)
+    Tk.TkNum     -> Just $ Tk.Integer (read (handleInfixPlus string) :: Int)
     Tk.TkId      -> Just $ Tk.Id string
     _            -> Nothing
+    where 
+        handleInfixPlus :: String -> String
+        handleInfixPlus whole@(x:xs) = case x of 
+           '+' -> xs
+           _   -> whole 
+        handleInfixPlus n = n
 
 -- Handles creation of invalid input.
 buildError :: AlexPosn -> String -> LexerContent 

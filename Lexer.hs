@@ -555,8 +555,8 @@ alex_base = listArray (0 :: Int, 68)
   , 0
   , 0
   , 0
-  , 0
   , 2576
+  , 2586
   , 0
   , 0
   , 0
@@ -588,7 +588,7 @@ alex_base = listArray (0 :: Int, 68)
   ]
 
 alex_table :: Array Int Int
-alex_table = listArray (0 :: Int, 2831)
+alex_table = listArray (0 :: Int, 2841)
   [ 0
   , 66
   , 66
@@ -3223,6 +3223,16 @@ alex_table = listArray (0 :: Int, 2831)
   , 15
   , 15
   , 15
+  , 15
+  , 15
+  , 15
+  , 15
+  , 15
+  , 15
+  , 15
+  , 15
+  , 15
+  , 15
   , 0
   , 0
   , 0
@@ -3424,7 +3434,7 @@ alex_table = listArray (0 :: Int, 2831)
   ]
 
 alex_check :: Array Int Int
-alex_check = listArray (0 :: Int, 2831)
+alex_check = listArray (0 :: Int, 2841)
   [ -1
   , 0
   , 1
@@ -6049,6 +6059,16 @@ alex_check = listArray (0 :: Int, 2831)
   , 120
   , 121
   , 122
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
   , 48
   , 49
   , 50
@@ -6485,9 +6505,15 @@ buildToken espTk (AlexPn _ r c) str = Right tk
 -- Given a Token and a string, it propperly assigns context to Token that require it.
 chooseContent :: Tk.Token -> String -> Maybe Tk.Content 
 chooseContent token string = case token of 
-    Tk.TkNum     -> Just $ Tk.Integer (read string :: Int)
+    Tk.TkNum     -> Just $ Tk.Integer (read (handleInfixPlus string) :: Int)
     Tk.TkId      -> Just $ Tk.Id string
     _            -> Nothing
+    where 
+        handleInfixPlus :: String -> String
+        handleInfixPlus whole@(x:xs) = case x of 
+           '+' -> xs
+           _   -> whole 
+        handleInfixPlus n = n
 
 -- Handles creation of invalid input.
 buildError :: AlexPosn -> String -> LexerContent 

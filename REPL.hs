@@ -3,6 +3,7 @@ module REPL where
 import System.Directory (doesFileExist)
 import Data.Either (partitionEithers)
 import System.Exit (exitSuccess)
+import System.IO (hFlush, stdout)
 import Data.List (intersperse)
 
 import qualified Tokens as Tk
@@ -13,10 +14,10 @@ import qualified BackEnd as BE
 loop :: BE.UserState -> IO ()
 loop tks = do
     putStr prompt
+    hFlush stdout
     inp <- getLine
 
-    newTks <- choice tks inp
-    loop newTks
+    choice tks inp >>= loop
 
 -- Logic for interpretation of special commands.
 choice :: BE.UserState -> String -> IO BE.UserState
