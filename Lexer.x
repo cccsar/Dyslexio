@@ -13,18 +13,56 @@ $alpha = [a-zA-Z]
 
 tokens :-
     $white+           ;
-                       
-    int                                 {\posn str-> buildToken Tk.TkNum posn str}
-    bool                                {\posn str-> buildToken Tk.TkBool posn str}
-                         
+
+    -- reserved words                      
+    int                                 {\posn str-> buildToken Tk.TkNum posn str}   
+    bool                                {\posn str-> buildToken Tk.TkBool posn str}              
+    
+     -- constants
+    [\-]{0,1}$digit+                    {\posn str-> buildToken Tk.TkInteger posn str } 
     true                                {\posn str-> buildToken Tk.TkTrue posn str }
     false                               {\posn str-> buildToken Tk.TkFalse posn str }
-    [\-]{0,1}$digit+                    {\posn str-> buildToken Tk.TkInteger posn str } 
     
+    -- operators
+    \(                                  {\posn str-> buildToken Tk.TkOpenPar posn str}
+    \)                                  {\posn str-> buildToken Tk.TkOpenPar posn str}
+    \^                                  {\posn str-> buildToken Tk.TkPower posn str}
+    \+                                  {\posn str-> buildToken Tk.TkPlus posn str}
+    \-                                  {\posn str-> buildToken Tk.TkMinus posn str}
+    \!                                  {\posn str-> buildToken Tk.TkNot posn str}
+    \*                                  {\posn str-> buildToken Tk.TkMult posn str}
+    \%                                  {\posn str-> buildToken Tk.TkMod posn str}
+    \<                                  {\posn str-> buildToken Tk.TkLT posn str}
+    \<=                                 {\posn str-> buildToken Tk.TkLE posn str}
+    \>=                                 {\posn str-> buildToken Tk.TkGE posn str}
+    \>                                  {\posn str-> buildToken Tk.TkGT posn str}
+    \=                                  {\posn str-> buildToken Tk.TkEQ posn str}
+    \<>                                 {\posn str-> buildToken Tk.TkNE posn str}
+    \&&                                 {\posn str-> buildToken Tk.TkAnd posn str}
+    \|\|                                {\posn str-> buildToken Tk.TkOr posn str}
+    
+    -- symbols
+    \'                                  {\posn str-> buildToken Tk.TkQuote posn str}
+    \,                                  {\posn str-> buildToken Tk.TkComma posn str}
+    \:=                                 {\posn str-> buildToken Tk.TkAssign posn str}
+    \;                                  {\posn str-> buildToken Tk.TkSemicolon posn str}
+    \=>                                 {\posn str-> buildToken Tk.TkYields posn str}
+    \->                                 {\posn str-> buildToken Tk.TkRArrow posn str}
+    \<\-                                 {\posn str-> buildToken Tk.TkLArrow posn str}
+    \[                                  {\posn str-> buildToken Tk.TkOpenBracket posn str}
+    \]                                  {\posn str-> buildToken Tk.TkCloseBracket posn str}
+    \{                                  {\posn str-> buildToken Tk.TkOpenBrace posn str}
+    \}                                  {\posn str-> buildToken Tk.TkCloseBrace posn str}
+    \.                                  {\posn str-> buildToken Tk.TkDot posn str}
+    \:                                  {\posn str-> buildToken Tk.TkColon posn str}
+    \::                                 {\posn str-> buildToken Tk.TkColonColon posn str}
+    while                               {\posn str-> buildToken Tk.TkWhile posn str}
+    if                                  {\posn str-> buildToken Tk.TkIf posn str}
+   
+    -- ids
     ([$alpha\_]){1,}[$alpha\_$digit]*   {\posn str-> buildToken Tk.TkId posn str }
-
+   
     .                                   {\posn str-> buildError posn str}
-
 
 
 { 

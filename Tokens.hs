@@ -23,4 +23,40 @@ data Token
 
     -- Ids
     | TkId
+
+    -- Operators
+    | TkOpenPar
+    | TkClosePar
+    | TkPower
+    | TkPlus
+    | TkMinus
+    | TkNot
+    | TkMult
+    | TkMod
+    | TkLT 
+    | TkLE 
+    | TkGT
+    | TkGE 
+    | TkEQ 
+    | TkNE 
+    | TkAnd
+    | TkOr
+
+    -- Symbols
+    | TkQuote
+    | TkComma
+    | TkAssign
+    | TkSemicolon
+    | TkYields
+    | TkRArrow
+    | TkLArrow
+    | TkOpenBracket
+    | TkCloseBracket
+    | TkOpenBrace
+    | TkCloseBrace
+    | TkDot
+    | TkColon
+    | TkColonColon
+    | TkWhile
+    | TkIf
     deriving Show
