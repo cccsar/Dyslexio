@@ -1,23 +1,38 @@
 module Tokens where
 
-newtype Position = Pos (Int,Int) deriving Show
+newtype Position = Pos (Int,Int) 
 
-data Content = Bool Bool | Integer Int | Id String deriving Show
+instance Show Position where
+    show (Pos (l,c)) = "line: " ++ show l ++ " - column: " ++ show c
+
+data Content = Integer Int | Id String 
+
+instance Show Content where
+    show (Integer e) = show e
+    show (Id e)      = show e
 
 data ContextToken = CtxToken
     { position :: Position 
     , string :: String
     , stringContent :: Maybe Content
     , tk :: Token
-    } deriving (Show)
+    } 
+
+instance Show ContextToken where
+    show ctxTk = case stringContent ctxTk of
+        Nothing  -> show (tk ctxTk)
+        Just cnt -> show (tk ctxTk) ++ "(" ++ show cnt ++ ")"
+
 
 data Token
     -- Reserved words
-    = TkNum 
+    = TkInt 
     | TkBool 
+    | TkType
+    | TkLazy
 
     -- Constants
-    | TkInteger
+    | TkNum
     | TkTrue
     | TkFalse
 

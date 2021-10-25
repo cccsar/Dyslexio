@@ -12,58 +12,59 @@ $digit = 0-9
 $alpha = [a-zA-Z]		
 
 tokens :-
-    $white+           ;
+    $white+                             ;
 
-    -- reserved words                      
-    int                                 {\posn str-> buildToken Tk.TkNum posn str}   
-    bool                                {\posn str-> buildToken Tk.TkBool posn str}              
-    
-     -- constants
-    [\-]{0,1}$digit+                    {\posn str-> buildToken Tk.TkInteger posn str } 
-    true                                {\posn str-> buildToken Tk.TkTrue posn str }
-    false                               {\posn str-> buildToken Tk.TkFalse posn str }
-    
-    -- operators
-    \(                                  {\posn str-> buildToken Tk.TkOpenPar posn str}
-    \)                                  {\posn str-> buildToken Tk.TkOpenPar posn str}
-    \^                                  {\posn str-> buildToken Tk.TkPower posn str}
-    \+                                  {\posn str-> buildToken Tk.TkPlus posn str}
-    \-                                  {\posn str-> buildToken Tk.TkMinus posn str}
-    \!                                  {\posn str-> buildToken Tk.TkNot posn str}
-    \*                                  {\posn str-> buildToken Tk.TkMult posn str}
-    \%                                  {\posn str-> buildToken Tk.TkMod posn str}
-    \<                                  {\posn str-> buildToken Tk.TkLT posn str}
-    \<=                                 {\posn str-> buildToken Tk.TkLE posn str}
-    \>=                                 {\posn str-> buildToken Tk.TkGE posn str}
-    \>                                  {\posn str-> buildToken Tk.TkGT posn str}
-    \=                                  {\posn str-> buildToken Tk.TkEQ posn str}
-    \<>                                 {\posn str-> buildToken Tk.TkNE posn str}
-    \&&                                 {\posn str-> buildToken Tk.TkAnd posn str}
-    \|\|                                {\posn str-> buildToken Tk.TkOr posn str}
-    
-    -- symbols
-    \'                                  {\posn str-> buildToken Tk.TkQuote posn str}
-    \,                                  {\posn str-> buildToken Tk.TkComma posn str}
-    \:=                                 {\posn str-> buildToken Tk.TkAssign posn str}
-    \;                                  {\posn str-> buildToken Tk.TkSemicolon posn str}
-    \=>                                 {\posn str-> buildToken Tk.TkYields posn str}
-    \->                                 {\posn str-> buildToken Tk.TkRArrow posn str}
-    \<\-                                 {\posn str-> buildToken Tk.TkLArrow posn str}
-    \[                                  {\posn str-> buildToken Tk.TkOpenBracket posn str}
-    \]                                  {\posn str-> buildToken Tk.TkCloseBracket posn str}
-    \{                                  {\posn str-> buildToken Tk.TkOpenBrace posn str}
-    \}                                  {\posn str-> buildToken Tk.TkCloseBrace posn str}
-    \.                                  {\posn str-> buildToken Tk.TkDot posn str}
-    \:                                  {\posn str-> buildToken Tk.TkColon posn str}
-    \::                                 {\posn str-> buildToken Tk.TkColonColon posn str}
-    while                               {\posn str-> buildToken Tk.TkWhile posn str}
-    if                                  {\posn str-> buildToken Tk.TkIf posn str}
-   
-    -- ids
-    ([$alpha\_]){1,}[$alpha\_$digit]*   {\posn str-> buildToken Tk.TkId posn str }
-   
-    .                                   {\posn str-> buildError posn str}
+    -- Reserved words                      
+    int                                 { buildToken Tk.TkInt }   
+    bool                                { buildToken Tk.TkBool }              
+    type                                { buildToken Tk.TkType }
+    lazy                                { buildToken Tk.TkLazy }
+                                         
+     -- Constants                        
+    [\-]{0,1}$digit+                    { buildToken Tk.TkNum } 
+    true                                { buildToken Tk.TkTrue }
+    false                               { buildToken Tk.TkFalse }
+                                         
+    -- Ids                               
+    ([$alpha\_]){1,}[$alpha\_$digit]*   { buildToken Tk.TkId  }
 
+    -- Operators                         
+    \(                                  { buildToken Tk.TkOpenPar }
+    \)                                  { buildToken Tk.TkClosePar }
+    \^                                  { buildToken Tk.TkPower }
+    \+                                  { buildToken Tk.TkPlus }
+    \-                                  { buildToken Tk.TkMinus }
+    \!                                  { buildToken Tk.TkNot }
+    \*                                  { buildToken Tk.TkMult }
+    \%                                  { buildToken Tk.TkMod }
+    \<                                  { buildToken Tk.TkLT }
+    \<=                                 { buildToken Tk.TkLE }
+    \>=                                 { buildToken Tk.TkGE }
+    \>                                  { buildToken Tk.TkGT }
+    \=                                  { buildToken Tk.TkEQ }
+    \<>                                 { buildToken Tk.TkNE }
+    \&&                                 { buildToken Tk.TkAnd }
+    \|\|                                { buildToken Tk.TkOr }
+                                         
+    -- Symbols                           
+    \'                                  { buildToken Tk.TkQuote }
+    \,                                  { buildToken Tk.TkComma }
+    \:=                                 { buildToken Tk.TkAssign }
+    \;                                  { buildToken Tk.TkSemicolon }
+    \=>                                 { buildToken Tk.TkYields }
+    \->                                 { buildToken Tk.TkRArrow }
+    \<\-                                { buildToken Tk.TkLArrow }
+    \[                                  { buildToken Tk.TkOpenBracket }
+    \]                                  { buildToken Tk.TkCloseBracket }
+    \{                                  { buildToken Tk.TkOpenBrace }
+    \}                                  { buildToken Tk.TkCloseBrace }
+    \.                                  { buildToken Tk.TkDot }
+    \:                                  { buildToken Tk.TkColon }
+    \::                                 { buildToken Tk.TkColonColon }
+    while                               { buildToken Tk.TkWhile }
+    if                                  { buildToken Tk.TkIf }
+                                         
+    .                                   { buildError }
 
 { 
 
@@ -84,14 +85,9 @@ buildToken espTk (AlexPn _ r c) str = Right tk
 -- Given a Token and a string, it propperly assigns context to Token that require it.
 chooseContent :: Tk.Token -> String -> Maybe Tk.Content 
 chooseContent token string = case token of 
-    Tk.TkInteger -> Just $ Tk.Integer (read string :: Int)
-    Tk.TkTrue    -> Just $ adaptBool string
-    Tk.TkFalse   -> Just $ adaptBool string 
+    Tk.TkNum     -> Just $ Tk.Integer (read string :: Int)
     Tk.TkId      -> Just $ Tk.Id string
     _            -> Nothing
-    where
-        adaptBool bl = let new =  (toUpper $ head bl) : tail bl  
-                       in Tk.Bool (read new :: Bool)
 
 -- Handles creation of invalid input.
 buildError :: AlexPosn -> String -> LexerContent 
