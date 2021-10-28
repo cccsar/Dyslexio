@@ -1,4 +1,0 @@
-.load testBasic
-.load testCommands
-.failed
-.reset

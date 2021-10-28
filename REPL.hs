@@ -1,103 +1,196 @@
-module REPL where
+module REPL 
+( loop
+, initializeDisplay
+) where
 
+{-
+ - Module containing the REPL related logic, as well as some
+ - helper functions concerning display only.
+-}
+
+import Control.Monad (foldM)
 import System.Directory (doesFileExist)
 import Data.Either (partitionEithers)
 import System.Exit (exitSuccess)
-import Data.List (intersperse)
+import System.IO (hFlush, stdout)
+import Data.List (intercalate)
 
-import qualified Tokens as Tk
-import qualified Error as Err
+import qualified Data.Map as M
+
+import qualified Tokens as Tk (ContextToken)
+import qualified Error as Err (TokenError)
 import qualified BackEnd as BE
 
--- Prompt display and user input.
+
+-- | Prompt display and user inputut.
 loop :: BE.UserState -> IO ()
 loop tks = do
     putStr prompt
-    inp <- getLine
+    hFlush stdout
+    input <- getLine
 
-    newTks <- choice tks inp
-    loop newTks
+    choice tks input >>= loop
 
--- Logic for interpretation of special commands.
+-- | Logic for interpretation of special commands.
 choice :: BE.UserState -> String -> IO BE.UserState
-choice ustate inp = case words inp of 
-    (".lex":xs)  -> do 
-        lexResult <- printLex (unwords xs)
-        return $ ustate { BE.tks = lexResult } 
+choice ustate input = case words input of
+    (".lex":xs)  -> printLex (unwords xs) ustate
+    (".load":xs) -> chooseLoad ustate xs
+    [".failed"]  -> chooseFailed ustate
+    [".reset"]   -> chooseReset ustate 
+    ["."]       -> exitSuccess
+    _           -> do
+        process input
+        return ustate
 
-    (".load":xs) -> do
-        rel <- doesFileExist (unwords xs)
+-- | Implementation of logic for loading a file.
+chooseLoad ::  BE.UserState -> [String] -> IO BE.UserState
+chooseLoad ustate input = do
+        let filename = unwords input
+        exists <- doesFileExist filename
 
-        if rel then do
-            content <- readFile (unwords xs)
-            -- Extend logic ###
-            newTks  <- printLex content
-            return $ ustate { BE.tks = newTks }
+        if exists 
+            then do
+            content <- readFile (unwords input)
+            putStrLn $ "Loading " ++ show filename ++ " .. "
+
+            let numberAndLineList = BE.numberedLines content
+                baseState = ustate { BE.currentOpenFile = Just filename }
+
+            -- ### This one is a bit confusing, see if it can get simpler
+            newState <- foldM 
+                        (\currentUstate (line,content) -> 
+                            let modifiedUstate = currentUstate { BE.nextLine = line }
+                            in choice modifiedUstate content 
+                        ) 
+                        baseState 
+                        numberAndLineList
+
+            
+            return newState { BE.nextLine = BE.nextLine ustate, 
+                              BE.currentOpenFile = BE.currentOpenFile ustate
+                            } 
             else do
-                putStrLn "File does not exists"
-                return ustate 
-
-    [".failed"] -> do  -- ###
-        let (errs,_) = partitionEithers (BE.tks ustate)
-
-        if null errs then do
-            putStrLn "No errors to show."
-            return ustate
-            else do 
-                putStrLn "Errors: "
-                mapM_ print errs
+                putStrLn $ "No such file \"" ++ filename ++ "\"In the current directory."
                 return ustate
 
-    [".reset"]  -> return $ ustate { BE.tks = [] } -- ###
-
-    ["."]       -> exitSuccess
-
-    _         -> do 
-        process inp
+-- | Implementation of logic for file error display.
+chooseFailed :: BE.UserState -> IO BE.UserState
+chooseFailed ustate = do
+    if M.size (BE.errorDictionary ustate) == 0 
+        then do
+        putStrLn "Empty error list. No errors to show"
         return ustate
+
+        else do
+            -- ### This one is a bit confusing
+            let errors = concatMap 
+                            (\(filename,context) -> 
+                                map 
+                                    (\content -> '\t':content++",") 
+                                    (displayFileErrors filename context)
+                            )
+                            (M.toAscList (BE.errorDictionary ustate)) 
+
+                errorDisplay = init errors ++ [init $ last errors]
+                
+            putStrLn "[ "
+            mapM_ putStrLn errorDisplay
+            putStrLn "] "
+
+            return ustate
+
+-- | Implementation of logic for reseting error list.
+chooseReset :: BE.UserState -> IO BE.UserState
+chooseReset ustate = 
+    if M.size (BE.errorDictionary ustate) == 0 
+        then do 
+        putStrLn "List of errors already empty."  
+                                              
+        return ustate
+        else return $ ustate { BE.errorDictionary = M.empty } 
 
 {- REPL Interface functions -}
 
+-- | Only displays an error message for now.
 process :: String -> IO ()
-process tks = putStrLn $ "ERROR: " ++ tks ++ " ==> undefined interpretation"
+process inputLine = putStrLn $ "ERROR: " ++ inputLine ++ " ==> undefined interpretation"
 
-printLex :: String -> IO [Either Err.TokenError Tk.ContextToken]
-printLex str = do 
-    let scan = BE.lexer str
-        (errs,tkList) = partitionEithers scan
+{- | Given user or file input, displays the result of tokenization accordingly and
+ - updates user state when necessary.
+ -}
+printLex :: String -> BE.UserState ->  IO BE.UserState
+printLex inputLine ustate = do
+    let scan = BE.lexer inputLine
+        (errors,tokens) = partitionEithers scan
 
-    if null errs then  do
-        putStr $ "OK:lexer("++show str++") ==> "
-        putStr "[ "
-        mapM_ putStr (intersperse " , " . map show $ tkList)
-        putStrLn " ]"
-        else do 
-            putStr $ "ERROR:lexer("++show str++") ==> "
-            putStr "tokens invalidos de la entrada: [" 
-            mapM_ putStr (intersperse " , " . map show $ errs) 
-            putStrLn " ]"
-    
-    return scan
+    if null errors 
+        then do
+        putStrLn $ displayTokens inputLine tokens
+        return ustate
+
+        else do
+            case BE.currentOpenFile ustate of
+                Just filename -> do
+                    -- Print layout when errors appear on a file.
+                    let fileErrors = displayFileErrors 
+                                        filename [(BE.nextLine ustate,inputLine,errors)]
+                    mapM_ putStrLn fileErrors
+
+                    -- Update error dictionary with found errors.
+                    let lineNumber    = BE.nextLine ustate
+                        errorContext  = (lineNumber,inputLine,errors)
+                        newErrorTrack = BE.insertDictionary filename errorContext 
+                                            (BE.errorDictionary ustate)
+
+                    return $ ustate { BE.errorDictionary = newErrorTrack }
+
+                _             -> do
+                    -- Print layout when errors are typed directly.
+                    putStrLn (displayErrors inputLine errors)
+
+                    return ustate
+
+-- | Given a file and it's related errors, returns a list of error strings.
+displayFileErrors :: String -> [(Int,String,[Err.TokenError])] -> [String]
+displayFileErrors filename errors = map
+                                    (\(line,context,err) -> 
+                                        "( " ++ filename++ ", " ++ show line ++ ", " 
+                                        ++ displayErrors context err ++ ")"
+                                    ) 
+                                    errors
+
+-- | Given input line and a list of errors, returns the correct error string.
+displayErrors :: String -> [Err.TokenError] -> String
+displayErrors inputLine errors =
+    "ERROR: lexer(" ++ show inputLine ++ ") ==> " ++
+    "tokens invalidos de la entrada: [ "
+    ++ intercalate " , " (map show errors)
+    ++ " ]"
+
+-- | Given input line and a list of errors, returns the correct token string.
+displayTokens  :: String -> [Tk.ContextToken] -> String
+displayTokens inputLine tokens =
+    "OK: lexer(" ++ show inputLine ++ ") ==> [ " 
+    ++ intercalate " , " (map show tokens) ++ " ]"
 
 {- Additional display functions -}
 
--- Clears the screen
+-- | Clears the screen
 clearScreen :: IO ()
 clearScreen = putStr "\ESC[2J"
 
--- Moves to a position on the screen.
+-- | Moves to a position on the screen.
 goTo :: (Int,Int) -> IO ()
 goTo (x, y) = putStr $ "\ESC[" ++ show y ++ ";" ++ show x ++ "H"
 
--- Clears the screen and goes to the beginning  of it.
+-- | |Clears the screen and goes to the beginning  of it.
 initializeDisplay :: IO ()
-initializeDisplay = do 
-    clearScreen 
+initializeDisplay = do
+    clearScreen
     goTo (0,0)
 
-{- Constants: messages, errors, warnings -}
+{- Constants -}
 
 prompt :: String
 prompt = "Dyslexio> "
-
-intro = "Welcome to Dyslexio! a good option to interpretate LIPS programming language"
