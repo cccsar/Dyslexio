@@ -25,8 +25,6 @@ tokens :-
     true                                { buildToken Tk.TkTrue }
     false                               { buildToken Tk.TkFalse }
                                          
-    -- Ids                               
-    ([$alpha\_]){1,}[$alpha\_$digit]*   { buildToken Tk.TkId  }
 
     -- Operators                         
     \(                                  { buildToken Tk.TkOpenPar }
@@ -63,6 +61,9 @@ tokens :-
     \::                                 { buildToken Tk.TkColonColon }
     while                               { buildToken Tk.TkWhile }
     if                                  { buildToken Tk.TkIf }
+    
+    -- Ids                               
+    ([$alpha\_]){1,}[$alpha\_$digit]*   { buildToken Tk.TkId  }
                                          
     .                                   { buildError }
 
