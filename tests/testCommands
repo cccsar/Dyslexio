@@ -1,0 +1,14 @@
+.lex int b := 36
+.lex 1 + 4 
+.lex a := 'variable'
+.lex a <> b 
+.lex bool i = true
+.lex !i && false || true
+.lex if 8 % 7
+.lex while (variable)
+.lex {[}]
+.lex func :: int -> bool if True var <- true
+.lex const func (foo, bar) => { return foo * bar}
+.lex <=> <->
+.lex whilesomething
+
