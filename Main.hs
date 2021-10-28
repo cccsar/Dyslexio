@@ -3,7 +3,7 @@ module Main where
 import REPL
 import BackEnd (baseUserState)
 
--- Program entry point.
+-- | Program entry point.
 main :: IO ()
 main = do
     initializeDisplay

@@ -12,6 +12,7 @@ where
  -}
 
 import Data.Char(isSpace)
+import System.FilePath(FilePath)
 
 import qualified Data.Map as M
 
@@ -29,7 +30,8 @@ type Dictionary a b = M.Map a [b]
 data UserState = UState 
     { errorDictionary :: Dictionary Filename ErrorContext,
       nextLine :: Int,
-      currentOpenFile :: Maybe Filename 
+      currentOpenFile :: Maybe Filename,
+      pathName :: FilePath
     }
 
 
@@ -65,4 +67,9 @@ lexer = L.alexScanTokens
 {- Constants -}
 
 baseUserState :: UserState
-baseUserState = UState { errorDictionary = M.empty , nextLine = 1, currentOpenFile = Nothing }
+baseUserState = UState 
+                    { errorDictionary = M.empty 
+                    , nextLine = 1
+                    , currentOpenFile = Nothing
+                    , pathName = ""
+                    }

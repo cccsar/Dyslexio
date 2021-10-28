@@ -9,17 +9,19 @@ module REPL
 -}
 
 import Control.Monad (foldM)
-import System.Directory (doesFileExist)
 import Data.Either (partitionEithers)
-import System.Exit (exitSuccess)
-import System.IO (hFlush, stdout)
 import Data.List (intercalate)
+import System.Directory (doesFileExist)
+import System.Exit (exitSuccess)
+import System.FilePath (dropFileName,(</>))
+import System.IO (hFlush, stdout)
+
 
 import qualified Data.Map as M
 
-import qualified Tokens as Tk (ContextToken)
-import qualified Error as Err (TokenError)
 import qualified BackEnd as BE
+import qualified Error as Err (TokenError)
+import qualified Tokens as Tk (ContextToken)
 
 
 -- | Prompt display and user inputut.
@@ -46,33 +48,37 @@ choice ustate input = case words input of
 -- | Implementation of logic for loading a file.
 chooseLoad ::  BE.UserState -> [String] -> IO BE.UserState
 chooseLoad ustate input = do
-        let filename = unwords input
-        exists <- doesFileExist filename
+    let filename = BE.pathName ustate ++ unwords input
+    exists <- doesFileExist filename
 
-        if exists 
-            then do
-            content <- readFile (unwords input)
-            putStrLn $ "Loading " ++ show filename ++ " .. "
+    if exists 
+        then do
+        content <- readFile filename 
 
-            let numberAndLineList = BE.numberedLines content
-                baseState = ustate { BE.currentOpenFile = Just filename }
+        putStrLn $ "Loading " ++ show filename ++ " .. "
 
-            -- ### This one is a bit confusing, see if it can get simpler
-            newState <- foldM 
-                        (\currentUstate (line,content) -> 
-                            let modifiedUstate = currentUstate { BE.nextLine = line }
-                            in choice modifiedUstate content 
-                        ) 
-                        baseState 
-                        numberAndLineList
+        let numberAndLineList = BE.numberedLines content
+            filePath = dropFileName filename           
+            baseState = ustate { BE.currentOpenFile = Just filename
+                               , BE.pathName = filePath 
+                               }
 
-            
-            return newState { BE.nextLine = BE.nextLine ustate, 
-                              BE.currentOpenFile = BE.currentOpenFile ustate
-                            } 
-            else do
-                putStrLn $ "No such file \"" ++ filename ++ "\"In the current directory."
-                return ustate
+        -- ### This one is a bit confusing, see if it can get simpler
+        newState <- foldM 
+                    (\currentUstate (line,content) -> 
+                        let modifiedUstate = currentUstate { BE.nextLine = line }
+                        in choice modifiedUstate content 
+                    ) 
+                    baseState 
+                    numberAndLineList
+
+        return newState { BE.nextLine = BE.nextLine ustate
+                        , BE.currentOpenFile = BE.currentOpenFile ustate
+                        , BE.pathName = BE.pathName ustate
+                        } 
+        else do
+            putStrLn $ "No such file \"" ++ filename ++ "\"In the current directory."
+            return ustate
 
 -- | Implementation of logic for file error display.
 chooseFailed :: BE.UserState -> IO BE.UserState

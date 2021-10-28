@@ -1,5 +1,9 @@
 module Error (TokenError(..)) where
 
+{-
+ - Module concerning error types.
+ -}
+
 import qualified Tokens as Tk (Position(..))
 
 
