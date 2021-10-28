@@ -1,48 +1,68 @@
-module BackEnd where
+module BackEnd 
+( UserState(..)
+, insertDictionary
+, numberedLines
+, lexer
+, baseUserState
+)
+where
+
+{-
+ - Module with supporting functions and data definitions for the REPL module
+ -}
+
+import Data.Char(isSpace)
+
+import qualified Data.Map as M
 
 import qualified Tokens as Tk
 import qualified Error as Err
 import qualified Lexer as L
 
-import Data.Char(isSpace)
-import qualified Data.Map as M
+
+-- | Line number, string in error and list of errors
+type ErrorContext = (Int,String,[Err.TokenError]) 
+type Filename = String
+-- | A dictionary is a word and a list of acceptions for that word.
+type Dictionary a b = M.Map a [b]
 
 data UserState = UState 
-    { tks :: [Either Err.TokenError Tk.ContextToken ]
-    } -- ###
-
-data UserState' = UState' 
-    { errorDict :: M.Map String [(Int,String,[Err.TokenError])],
+    { errorDictionary :: Dictionary Filename ErrorContext,
       nextLine :: Int,
-      currentOpenFile :: Maybe String }
+      currentOpenFile :: Maybe Filename 
+    }
 
-
-insertDictionary :: Ord k => k -> a -> M.Map k [a] -> M.Map k [a]
-insertDictionary word meaning = M.insertWith (++) word [meaning]
 
 {- Helper functions -}
 
--- Given a string representing a file, returns an association list between the line 
--- number and the line content disregarding empty or only whitespace lines.
+-- | Generic function to append list elements in map where "values" are keys.
+insertDictionary :: Ord k => k -> a -> M.Map k [a] -> M.Map k [a]
+insertDictionary word meaning = M.insertWith (++) word [meaning]
+
+{- | Given a string repreNewLinesenting a file, returns an association list between the line 
+ - number and the line content disregarding empty or only whitespace lines.
+ -}
 numberedLines :: String -> [(Int,String)] 
 numberedLines = numberLines 1
     where
         numberLines :: Int -> String -> [(Int,String)]
         numberLines _ [] = []
         numberLines n xs 
-            | null post = [(n,pre)]
-            | otherwise = if null pre || all isSpace pre then next 
-                            else (n,pre) : next 
+            | null postNewLine = [(n,preNewLine)]
+            | otherwise = if null preNewLine || all isSpace preNewLine 
+                          then next 
+                          else (n,preNewLine) : next 
             where 
-                (pre,post) = span (/='\n') xs
-                next = numberLines (n+1) (tail post)
+                (preNewLine,postNewLine) = span (/='\n') xs
+                next = numberLines (n+1) (tail postNewLine)
 
+{- Relevant Virtual Machine functions -}
 
-{- Relevant functions Virtual Machine -}
-
+-- | This function is a renaming of the alexScanTokens function that performs tokenization.
 lexer :: String -> [Either Err.TokenError Tk.ContextToken]
 lexer = L.alexScanTokens
 
 {- Constants -}
-baseUserState = UState {tks = [] }
-baseUserState' = UState' { errorDict = M.empty , nextLine = 1, currentOpenFile = Nothing }
+
+baseUserState :: UserState
+baseUserState = UState { errorDictionary = M.empty , nextLine = 1, currentOpenFile = Nothing }

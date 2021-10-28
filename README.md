@@ -1,13 +1,16 @@
 # Dyslexio
+
 Interpreter for the LIPS programming language for the subject CI-3725 : Translators and Interpreters
 
 ## Lexer
 
 ### Testing instructions
 
+This project compiles with ```ghc version 8.6.5```.
+
 Run: 
 
-> make
+> make && ./Main
 
 And interact with Dyslexio REPL. 
 

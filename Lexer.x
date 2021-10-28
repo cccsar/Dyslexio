@@ -1,9 +1,8 @@
 { 
 module Lexer where
 
-import qualified Tokens as Tk (Token(..), ContextToken(..), Position(..), Content (..))
+import qualified Tokens as Tk 
 import qualified Error as Err
-import Data.Char (toUpper)
 }
 
 %wrapper "posn"
