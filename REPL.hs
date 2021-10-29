@@ -55,7 +55,7 @@ chooseLoad ustate input = do
         then do
         content <- readFile filename 
 
-        putStrLn $ "Loading " ++ show filename ++ " .. "
+        putStrLn $ "--> Loading " ++ show filename ++ " .. "
 
         let numberAndLineList = BE.numberedLines content
             filePath = dropFileName filename           
@@ -77,7 +77,7 @@ chooseLoad ustate input = do
                         , BE.pathName = BE.pathName ustate
                         } 
         else do
-            putStrLn $ "No such file \"" ++ filename ++ "\"In the current directory."
+            putStrLn $ "ERROR: No such file \"" ++ filename ++ "\"."
             return ustate
 
 -- | Implementation of logic for file error display.
@@ -85,7 +85,7 @@ chooseFailed :: BE.UserState -> IO BE.UserState
 chooseFailed ustate = do
     if M.size (BE.errorDictionary ustate) == 0 
         then do
-        putStrLn "Empty error list. No errors to show"
+        putStrLn "WARNING: Empty error list. No errors to show."
         return ustate
 
         else do
@@ -111,7 +111,7 @@ chooseReset :: BE.UserState -> IO BE.UserState
 chooseReset ustate = 
     if M.size (BE.errorDictionary ustate) == 0 
         then do 
-        putStrLn "List of errors already empty."  
+        putStrLn "List of errors is empty."  
                                               
         return ustate
         else return $ ustate { BE.errorDictionary = M.empty } 
@@ -120,7 +120,7 @@ chooseReset ustate =
 
 -- | Only displays an error message for now.
 process :: String -> IO ()
-process inputLine = putStrLn $ "ERROR: " ++ inputLine ++ " ==> undefined interpretation"
+process inputLine = putStrLn $ "ERROR: " ++ inputLine ++ " ==> undefined interpretation."
 
 {- | Given user or file input, displays the result of tokenization accordingly and
  - updates user state when necessary.
@@ -170,7 +170,7 @@ displayFileErrors filename errors = map
 displayErrors :: String -> [Err.TokenError] -> String
 displayErrors inputLine errors =
     "ERROR: lexer(" ++ show inputLine ++ ") ==> " ++
-    "tokens invalidos de la entrada: [ "
+    "invalid token: [ "
     ++ intercalate " , " (map show errors)
     ++ " ]"
 

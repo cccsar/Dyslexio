@@ -11,4 +11,3 @@
 .lex const func (foo, bar) => { return foo * bar}
 .lex <=> <->
 .lex whilesomething
-
