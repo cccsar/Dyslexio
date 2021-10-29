@@ -13,4 +13,4 @@ data TokenError = TkErr
     } 
 
 instance Show TokenError where
-    show err = show (name err) ++ " en " ++ show (pos err)
+    show err = show (name err) ++ " at " ++ show (pos err)

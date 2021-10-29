@@ -12,7 +12,7 @@ module Tokens
 newtype Position = Pos (Int,Int) 
 
 instance Show Position where
-    show (Pos (_,column)) = "la columna: " ++ show column
+    show (Pos (_,column)) = "column: " ++ show column
 
 data Content = Integer Int | Id String 
 

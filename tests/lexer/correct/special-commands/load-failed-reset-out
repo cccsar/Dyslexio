@@ -1,0 +1,5 @@
+.load load-failed-reset-out-1
+.failed
+.reset
+.lex 42
+.

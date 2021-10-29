@@ -2,9 +2,11 @@
 .lex bool
 .lex type
 .lex lazy
-.lex 26
+.lex 42
+.lex -42
 .lex true
 .lex false
+
 .lex (
 .lex )
 .lex ^
@@ -21,6 +23,7 @@
 .lex <>
 .lex &&
 .lex ||
+
 .lex '
 .lex ,
 .lex :=
@@ -37,4 +40,5 @@
 .lex ::
 .lex while
 .lex if
+
 .lex variable
