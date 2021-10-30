@@ -170,7 +170,7 @@ displayFileErrors filename errors = map
 displayErrors :: String -> [Err.TokenError] -> String
 displayErrors inputLine errors =
     "ERROR: lexer(" ++ show inputLine ++ ") ==> " ++
-    "invalid token: [ "
+    "invalid tokens: [ "
     ++ intercalate " , " (map show errors)
     ++ " ]"
 
