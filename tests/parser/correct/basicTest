@@ -1,0 +1,10 @@
+int n := 42 ;
+lazy int k := 67; 
+lazy bool done := 'n < k' ;
+int x := 10 * n + k;
+lazy int z := '(x + 1) ^ 2';
+
+n := n + 1;
+done := 'n <= k';
+z := 10 *( k + 1);
+z := '10 * (k + 1)';

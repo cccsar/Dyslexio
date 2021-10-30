@@ -2,6 +2,7 @@ module Interpreter () where
 
 {-
  - Module containing expression interpretation for the AST
+ - ### IDENTIFIER INTERPRETATION UNKNOWN
  -}
 
 import AST
@@ -18,7 +19,6 @@ arithmetic (Add l r)   = binOp (arithmetic l) (arithmetic r) (+)
 arithmetic (Sub l r)   = binOp (arithmetic l) (arithmetic r) (-)
 arithmetic (Minus el)  = arithmetic el >>= (\res -> Just $ res * (-1))
 arithmetic (Mult l r)  = binOp (arithmetic l) (arithmetic r) (*)
-arithmetic (Div l r)   = binOp (arithmetic l) (arithmetic r) div
 arithmetic (Mod l r)   = binOp (arithmetic l) (arithmetic r) mod
 arithmetic (Power l r) = binOp (arithmetic l) (arithmetic r) pow
 arithmetic _           = Nothing

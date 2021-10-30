@@ -1,7 +1,10 @@
 module AST 
-( Expr (..)
-, ConcreteType (..)
+( Program
+, Instruction (..)
 , Type(..)
+, ConcreteType (..)
+, Expr (..)
+, Id
 ) where
 
 {-
@@ -10,19 +13,19 @@ module AST
 
 data ConcreteType = Bool | Int deriving Show
 
-data Type = Lazy ConcreteType | PseudoType deriving Show
+data Type = Lazy ConcreteType | Concrete ConcreteType deriving Show
 
-type Identifier = String
+type Id = String
+
+type Program = [Instruction]
 
 data Instruction 
-   = Inicialization Type Identifier Expr
-   | Assignment Identifier Expr
-   | Sequence Instruction Instruction -- ###
+   = Inicialization Type Id Expr
+   | Assignment Id Expr
 
 instance Show Instruction where
     show (Assignment id expr) = show id ++ " := " ++ show expr
     show (Inicialization tp id expr) = show tp ++ " " ++ show id ++ " := " ++ show expr
-    show (Sequence first next) = show first ++ " ;\n" ++ show next
 
 data Expr
     -- Leafs == Non terminals
@@ -35,7 +38,6 @@ data Expr
     | Sub Expr Expr
     | Minus Expr
     | Mult Expr Expr
-    | Div Expr Expr
     | Mod Expr Expr
     | Power Expr Expr
     
@@ -54,6 +56,7 @@ data Expr
 
     -- Miscellaneus
     | Parentheses Expr
+    | Identifier Id
 
 instance Show Expr where
     show (IntExp num)               = show num
@@ -64,7 +67,6 @@ instance Show Expr where
     show (Sub lse rse)              = showBinOp lse rse "-"
     show (Minus expr)               = showUnOp expr "-"
     show (Mult lse rse)             = showBinOp lse rse "*"
-    show (Div lse rse)              = showBinOp lse rse "/"
     show (Mod lse rse)              = showBinOp lse rse "%"
     show (Power lse rse)            = showBinOp lse rse "^"
 
@@ -79,6 +81,7 @@ instance Show Expr where
     show (Not expr)                 = showUnOp expr "!"
 
     show (Parentheses expr)         = showSourround expr "(" ")"
+    show (Identifier name)          = name 
 
 showBinOp :: Expr -> Expr -> String -> String
 showBinOp left right op = show left ++ " " ++ op ++ " " ++ show right
