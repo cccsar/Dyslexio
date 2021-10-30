@@ -1,4 +1,8 @@
-module AST () where
+module AST 
+( Expr (..)
+, ConcreteType (..)
+, Type(..)
+) where
 
 {-
  - Data definitions for the abstract syntax tree 
