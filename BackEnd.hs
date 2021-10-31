@@ -1,8 +1,8 @@
 module BackEnd 
 ( UserState(..)
-, insertDictionary
 , numberedLines
 , lexer
+, insertDictionary
 , baseUserState
 )
 where
@@ -21,8 +21,8 @@ import qualified Error as Err
 import qualified Lexer as L
 
 
--- | Line number, string in error and list of errors
-type ErrorContext = (Int,String,[Err.TokenError]) 
+-- | Line number, and erorr string
+type ErrorContext = (Int,String) 
 type Filename = String
 -- | A dictionary is a word and a list of acceptions for that word.
 type Dictionary a b = M.Map a [b]

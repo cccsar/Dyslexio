@@ -72,9 +72,9 @@ chooseLoad ustate input = do
                     baseState 
                     numberAndLineList
 
-        return newState { BE.nextLine = BE.nextLine ustate
+        return newState { BE.nextLine        = BE.nextLine ustate
                         , BE.currentOpenFile = BE.currentOpenFile ustate
-                        , BE.pathName = BE.pathName ustate
+                        , BE.pathName        = BE.pathName ustate
                         } 
         else do
             putStrLn $ "ERROR: No such file \"" ++ filename ++ "\"."
@@ -85,18 +85,19 @@ chooseFailed :: BE.UserState -> IO BE.UserState
 chooseFailed ustate = do
     if M.size (BE.errorDictionary ustate) == 0 
         then do
-        putStrLn "WARNING: Empty error list. No errors to show."
-        return ustate
+            putStrLn "WARNING: Empty error list. No errors to show."
+            return ustate
 
         else do
             -- ### This one is a bit confusing
             let errors = concatMap 
-                            (\(filename,context) -> 
-                                map 
-                                    (\content -> '\t':content++",") 
-                                    (displayFileErrors filename context)
-                            )
-                            (M.toAscList (BE.errorDictionary ustate)) 
+                          (\(filename,errorContext) -> 
+                              map (\(line,errorString) -> 
+                                   '\t' : getFileErrorString filename line errorString ++ ","
+                                  )
+                                  errorContext
+                          )
+                          (M.toAscList (BE.errorDictionary ustate)) 
 
                 errorDisplay = init errors ++ [init $ last errors]
                 
@@ -132,20 +133,21 @@ printLex inputLine ustate = do
 
     if null errors 
         then do
-        putStrLn $ displayTokens inputLine tokens
+        putStrLn $ getAcceptationString inputLine tokens
         return ustate
 
         else do
             case BE.currentOpenFile ustate of
                 Just filename -> do
                     -- Print layout when errors appear on a file.
-                    let fileErrors = displayFileErrors 
-                                        filename [(BE.nextLine ustate,inputLine,errors)]
-                    mapM_ putStrLn fileErrors
+                    let errorString     = getErrorString inputLine errors
+                        fileErrorString = getFileErrorString 
+                                            filename (BE.nextLine ustate) errorString
+                    putStrLn fileErrorString
 
                     -- Update error dictionary with found errors.
                     let lineNumber    = BE.nextLine ustate
-                        errorContext  = (lineNumber,inputLine,errors)
+                        errorContext  = (lineNumber,errorString)
                         newErrorTrack = BE.insertDictionary filename errorContext 
                                             (BE.errorDictionary ustate)
 
@@ -153,30 +155,26 @@ printLex inputLine ustate = do
 
                 _             -> do
                     -- Print layout when errors are typed directly.
-                    putStrLn (displayErrors inputLine errors)
+                    putStrLn (getErrorString inputLine errors)
 
                     return ustate
 
 -- | Given a file and it's related errors, returns a list of error strings.
-displayFileErrors :: String -> [(Int,String,[Err.TokenError])] -> [String]
-displayFileErrors filename errors = map
-                                    (\(line,context,err) -> 
-                                        "( " ++ filename++ ", " ++ show line ++ ", " 
-                                        ++ displayErrors context err ++ ")"
-                                    ) 
-                                    errors
+getFileErrorString :: String -> Int -> String -> String
+getFileErrorString filename line errorString = 
+    "( " ++ filename ++ ", " ++ show line ++ ", " ++ errorString ++ " )"
 
 -- | Given input line and a list of errors, returns the correct error string.
-displayErrors :: String -> [Err.TokenError] -> String
-displayErrors inputLine errors =
+getErrorString :: String -> [Err.TokenError] -> String
+getErrorString inputLine errors =
     "ERROR: lexer(" ++ show inputLine ++ ") ==> " ++
     "invalid tokens: [ "
     ++ intercalate " , " (map show errors)
     ++ " ]"
 
 -- | Given input line and a list of errors, returns the correct token string.
-displayTokens  :: String -> [Tk.ContextToken] -> String
-displayTokens inputLine tokens =
+getAcceptationString  :: String -> [Tk.ContextToken] -> String
+getAcceptationString inputLine tokens =
     "OK: lexer(" ++ show inputLine ++ ") ==> [ " 
     ++ intercalate " , " (map show tokens) ++ " ]"
 
