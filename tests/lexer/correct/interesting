@@ -1,0 +1,8 @@
+.lex @
+.lex $
+.lex /
+.failed
+.load interesting1
+.failed
+.reset
+.failed
