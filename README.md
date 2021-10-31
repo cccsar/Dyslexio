@@ -4,9 +4,13 @@ Interpreter for the LIPS programming language for the subject CI-3725 : Translat
 
 ## Lexer
 
-### Testing instructions
+## Required installations
 
-This project compiles with ```ghc version 8.6.5```.
+This project compiles with ```ghc version 8.6.5``` and ```alex version 3.2.4```.
+
+These are the links with installations instructions for [Haskell](https://www.haskell.org/downloads/) and [alex](https://www.haskell.org/alex/) tool.
+
+### Running instructions
 
 Run: 
 
@@ -29,5 +33,3 @@ The REPL consist of *special commands* and expressions to interpretate. Valid sp
 * ```.failed``` : Prints the list of errors from a loaded file, or a message if no file has been loaded.
 * ```.reset``` : Clear the list of erros from a loaded file, or outputs a message if no file has been loaded.
 * ```.``` : Exits the prompt.
-
-## Parser
