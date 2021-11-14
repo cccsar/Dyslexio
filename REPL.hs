@@ -174,7 +174,11 @@ onFailLex errors inputLine ustate = case BE.currentOpenFile ustate of
 showAST :: [Tk.ContextToken] -> BE.UserState -> IO BE.UserState 
 showAST tks ustate = do
     let parseResult = BE.parse tks
-    mapM_ (putStrLn . show) parseResult
+
+    case parseResult of
+        Right result -> putStrLn $ show result
+        Left error   -> putStrLn error -- ## Try to get specific parse errors
+
     return ustate
 
 -- | Given a file and it's related errors, returns a list of error strings.

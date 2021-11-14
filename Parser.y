@@ -4,6 +4,7 @@ module Parser where
 import Tokens
 import AST
 import Error
+
 import Data.Maybe (fromJust)
 
 }
@@ -11,6 +12,7 @@ import Data.Maybe (fromJust)
 %name parse 
 %tokentype { ContextToken }
 %error { parseError }
+%monad { E } { thenE } { returnE }
 
 %token
     int  { CtxToken { tk = TkInt }}
@@ -71,9 +73,13 @@ import Data.Maybe (fromJust)
 
 %%
 
-PROGRAM :: { [Instruction] }
+PROGRAM :: { Program } 
+    : INSTS { Ins (reverse $1) }
+    | E     { Ex $1 }
+
+INSTS :: { [Instruction] }
         : INST         { [$1] }
-        | PROGRAM INST { $2 : $1 }
+        | INSTS INST { $2 : $1 }
 
 INST :: { Instruction }
 INST : TP id ':=' E ';' { Inicialization $1 (getId $2) $4 }
@@ -119,6 +125,5 @@ getId :: ContextToken -> String
 getId tk = case fromJust . stringContent $ tk of
     (Id el) -> el
 
-parseError :: [ContextToken] -> a
-parseError _ = error "Parse error"
+parseError _ = failE "Parse Error" 
 }

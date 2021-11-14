@@ -79,8 +79,10 @@ lexer = L.alexScanTokens
 {- | This function is a renaming of the parse function that creates an AST from an
  - input stream of Tokens
  -}
-parse :: [Tk.ContextToken] -> A.Program
-parse = reverse . P.parse
+parse :: [Tk.ContextToken] -> Either String A.Program
+parse tks = case P.parse tks of 
+    Err.Ok result  -> Right result
+    Err.Failed err -> Left err 
 
 
 {- Constants -}

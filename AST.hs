@@ -1,11 +1,13 @@
 module AST 
-( Program
+( Program(..)
 , Instruction (..)
 , Type(..)
 , ConcreteType (..)
 , Expr (..)
 , Id
 ) where
+
+import Data.List (intercalate)
 
 {-
  - Data definitions for the abstract syntax tree 
@@ -17,14 +19,18 @@ data Type = Lazy ConcreteType | Concrete ConcreteType deriving Show
 
 type Id = String
 
-type Program = [Instruction]
+data Program = Ins [Instruction] | Ex Expr 
+
+instance Show Program where
+    show (Ins xs)  = intercalate "\n" . map show $ xs
+    show (Ex expr) = show expr
 
 data Instruction 
    = Inicialization Type Id Expr
    | Assignment Id Expr
 
 instance Show Instruction where
-    show (Assignment id expr) = show id ++ " := " ++ show expr
+    show (Assignment id expr)        = show id ++ " := " ++ show expr
     show (Inicialization tp id expr) = show tp ++ " " ++ show id ++ " := " ++ show expr
 
 data Expr
