@@ -6,7 +6,7 @@ Interpreter for the LIPS programming language for the subject CI-3725 : Translat
 
 ### Testing instructions
 
-This project compiles with ```ghc version 8.6.5```.
+This project compiles with ```ghc version 8.6.5```, and is intended for use in Unix systems only.
 
 Run: 
 

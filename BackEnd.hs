@@ -4,6 +4,7 @@ module BackEnd
 , lexer
 , insertDictionary
 , baseUserState
+, parse
 )
 where
 
@@ -16,9 +17,11 @@ import System.FilePath(FilePath)
 
 import qualified Data.Map as M
 
-import qualified Tokens as Tk
+import qualified AST as A
 import qualified Error as Err
 import qualified Lexer as L
+import qualified Parser as P
+import qualified Tokens as Tk
 
 
 -- | Line number, and erorr string
@@ -58,11 +61,27 @@ numberedLines = numberLines 1
                 (preNewLine,postNewLine) = span (/='\n') xs
                 next = numberLines (n+1) (tail postNewLine)
 
+-- | For now, optional
+checkIntegerOverflow :: Int -> Bool
+checkIntegerOverflow n 
+    | n > uprBound || n < lwrBound = False
+    | otherwise                    = True
+    where 
+        uprBound = 2147483647  -- Positive integer bound, equivalent to 2^31 - 1 (ommits sign bit)
+        lwrBound = -2147483648 -- Negative integer bound, equivalent to 2^31 (ommits sign bit)
+
 {- Relevant Virtual Machine functions -}
 
 -- | This function is a renaming of the alexScanTokens function that performs tokenization.
 lexer :: String -> [Either Err.TokenError Tk.ContextToken]
 lexer = L.alexScanTokens
+
+{- | This function is a renaming of the parse function that creates an AST from an
+ - input stream of Tokens
+ -}
+parse :: [Tk.ContextToken] -> A.Program
+parse = reverse . P.parse
+
 
 {- Constants -}
 
