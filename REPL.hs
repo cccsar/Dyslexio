@@ -22,7 +22,6 @@ import qualified Data.Map as M
 import qualified BackEnd as BE
 import qualified Error as Err (TokenError)
 import qualified Tokens as Tk (ContextToken)
-import qualified Basement.BlockN as BE
 
 
 -- | Prompt display and user inputut.

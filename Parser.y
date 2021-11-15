@@ -93,6 +93,10 @@ BASETP :: { ConcreteType }
 BASETP : int   { Int }
        | bool  { Bool }
 
+ES :: { [Expr] } 
+    : E        { [$1] }
+    | ES ',' E { $3 : $1 }
+
 E :: { Expr }
 E : numLiteral { let Integer x = fromJust (stringContent $1) in IntExp x }
   | true       { BoolExp True }
@@ -117,6 +121,7 @@ E : numLiteral { let Integer x = fromJust (stringContent $1) in IntExp x }
   | E '||' E   { Or $1 $3 }
   | '!' E      { Not $2 }
 
+  | id '(' ES ')' { Function (getId $1) (reverse $3) }
   | '(' E ')'  { Parentheses $2 }
   | id         { Identifier (getId $1) }  
 

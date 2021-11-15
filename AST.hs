@@ -63,6 +63,7 @@ data Expr
     -- Miscellaneus
     | Parentheses Expr
     | Identifier Id
+    | Function Id [Expr]
 
 instance Show Expr where
     show (IntExp num)               = show num
@@ -88,6 +89,7 @@ instance Show Expr where
 
     show (Parentheses expr)         = showSourround expr "(" ")"
     show (Identifier name)          = name 
+    show (Function name exprs)       = name ++ "(" ++ (intercalate "," . map show $ exprs) ++ ")"
 
 showBinOp :: Expr -> Expr -> String -> String
 showBinOp left right op = show left ++ " " ++ op ++ " " ++ show right
