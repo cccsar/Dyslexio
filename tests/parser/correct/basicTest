@@ -1,10 +1,12 @@
-int n := 42 ;
-lazy int k := 67; 
-lazy bool done := 'n < k' ;
-int x := 10 * n + k;
-lazy int z := '(x + 1) ^ 2';
+.ast int n := 42 ;
+.ast lazy int k := 67; 
+.ast lazy bool done := 'n < k' ;
+.ast int x := 10 * n + k;
+.ast lazy int z := '(x + 1) ^ 2';
 
-n := n + 1;
-done := 'n <= k';
-z := 10 *( k + 1);
-z := '10 * (k + 1)';
+.ast n := n + 1;
+.ast done := 'n <= k';
+.ast z := 10 *( k + 1);
+.ast z := '10 * (k + 1)';
+
+.ast ' xd ()' 
