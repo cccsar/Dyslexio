@@ -94,36 +94,37 @@ BASETP : int   { Int }
        | bool  { Bool }
 
 ES :: { [Expr] } 
-    : E        { [$1] }
-    | ES ',' E { $3 : $1 }
-
-E :: { Expr }
-E : numLiteral { let Integer x = fromJust (stringContent $1) in IntExp x }
-  | true       { BoolExp True }
-  | false      { BoolExp False }
-  | '`' E '`'  { LazyExp $2 }
-
-  | E '+' E    { Add $1 $3 }
-  | E '-' E    { Sub $1 $3 }
-  | '-' E      { Minus $2 }
-  | E '*' E    { Mult $1 $3 }
-  | E '%' E    { Mod $1 $3 }
-  | E '^' E    { Power $1 $3 }
-
-  | E '<' E    { LessThan $1 $3 }
-  | E '<=' E   { LessEqualThan $1 $3 }
-  | E '>' E    { GreaterThan $1 $3 }
-  | E '>=' E   { GreaterEqualThan $1 $3 }
-  | E '=' E    { Equal $1 $3 }
-  | E '<>' E   { NotEqual $1 $3 }
-
-  | E '&&' E   { And $1 $3 }
-  | E '||' E   { Or $1 $3 }
-  | '!' E      { Not $2 }
+    : E           { [$1] }
+    | ES ',' E    { $3 : $1 }
+               
+E :: { Expr }  
+E : numLiteral    { let Integer x = fromJust (stringContent $1) in IntExp x }
+  | true          { BoolExp True }
+  | false         { BoolExp False }
+  | '`' E '`'     { LazyExp $2 }
+               
+  | E '+' E       { Add $1 $3 }
+  | E '-' E       { Sub $1 $3 }
+  | '-' E         { Minus $2 }
+  | '+' E         { Mas $2 }
+  | E '*' E       { Mult $1 $3 }
+  | E '%' E       { Mod $1 $3 }
+  | E '^' E       { Power $1 $3 }
+               
+  | E '<' E       { LessThan $1 $3 }
+  | E '<=' E      { LessEqualThan $1 $3 }
+  | E '>' E       { GreaterThan $1 $3 }
+  | E '>=' E      { GreaterEqualThan $1 $3 }
+  | E '=' E       { Equal $1 $3 }
+  | E '<>' E      { NotEqual $1 $3 }
+               
+  | E '&&' E      { And $1 $3 }
+  | E '||' E      { Or $1 $3 }
+  | '!' E         { Not $2 }
 
   | id '(' ES ')' { Function (getId $1) (reverse $3) }
-  | '(' E ')'  { Parentheses $2 }
-  | id         { Identifier (getId $1) }  
+  | '(' E ')'     { Parentheses $2 }
+  | id            { Identifier (getId $1) }  
 
 {
 getId :: ContextToken -> String

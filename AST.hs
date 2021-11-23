@@ -20,18 +20,24 @@ data Type = Lazy ConcreteType | Concrete ConcreteType deriving Show
 type Id = String
 
 data Program = Ins [Instruction] | Ex Expr 
+    deriving Show
 
+{-
 instance Show Program where
     show (Ins xs)  = intercalate "\n" . map show $ xs
     show (Ex expr) = show expr
+-}
 
 data Instruction 
    = Inicialization Type Id Expr
    | Assignment Id Expr
+   deriving Show
 
+{-
 instance Show Instruction where
     show (Assignment id expr)        = show id ++ " := " ++ show expr
     show (Inicialization tp id expr) = show tp ++ " " ++ show id ++ " := " ++ show expr
+-}
 
 data Expr
     -- Leafs == Non terminals
@@ -43,6 +49,7 @@ data Expr
     | Add Expr Expr
     | Sub Expr Expr
     | Minus Expr
+    | Mas Expr
     | Mult Expr Expr
     | Mod Expr Expr
     | Power Expr Expr
@@ -64,7 +71,9 @@ data Expr
     | Parentheses Expr
     | Identifier Id
     | Function Id [Expr]
+    deriving Show
 
+{-
 instance Show Expr where
     show (IntExp num)               = show num
     show (BoolExp val)              = show val
@@ -73,6 +82,7 @@ instance Show Expr where
     show (Add lse rse)              = showBinOp lse rse "+"
     show (Sub lse rse)              = showBinOp lse rse "-"
     show (Minus expr)               = showUnOp expr "-"
+    show (Mas expr)                 = showUnOp expr "+"
     show (Mult lse rse)             = showBinOp lse rse "*"
     show (Mod lse rse)              = showBinOp lse rse "%"
     show (Power lse rse)            = showBinOp lse rse "^"
@@ -90,6 +100,7 @@ instance Show Expr where
     show (Parentheses expr)         = showSourround expr "(" ")"
     show (Identifier name)          = name 
     show (Function name exprs)       = name ++ "(" ++ (intercalate "," . map show $ exprs) ++ ")"
+-}
 
 showBinOp :: Expr -> Expr -> String -> String
 showBinOp left right op = show left ++ " " ++ op ++ " " ++ show right
