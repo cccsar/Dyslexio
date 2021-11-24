@@ -1,11 +1,14 @@
-module Error (TokenError(..)) where
+module Error 
+( TokenError(..)
+, ErrorMonad(..)
+, bind
+) where
 
 {-
  - Module concerning error types.
  -}
 
 import qualified Tokens as Tk (Position(..))
-
 
 data TokenError = TkErr 
     { name :: String      -- ^ String in error.
@@ -14,3 +17,13 @@ data TokenError = TkErr
 
 instance Show TokenError where
     show err = show (name err) ++ " at " ++ show (pos err)
+
+{- Type for error representation -}
+
+data ErrorMonad a = Ok a | Failed String
+
+bind :: ErrorMonad a -> (a -> ErrorMonad b) -> ErrorMonad b
+m `bind` k = 
+   case m of 
+        Ok a -> k a
+        Failed e -> Failed e

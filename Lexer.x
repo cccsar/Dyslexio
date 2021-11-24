@@ -93,6 +93,7 @@ chooseContent token string = case token of
            '+' -> xs
            _   -> whole 
         handleInfixPlus n = n
+        
 
 -- Handles creation of invalid input.
 buildError :: AlexPosn -> String -> LexerContent 

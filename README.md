@@ -6,7 +6,8 @@ Interpreter for the LIPS programming language for the subject CI-3725 : Translat
 
 ## Required installations
 
-This project compiles with ```ghc version 8.6.5``` and ```alex version 3.2.4```.
+
+This project compiles with ```ghc version 8.6.5``` and ```alex version 3.2.4```, and is intended for Unix Systems only.
 
 These are the links with installations instructions for [Haskell](https://www.haskell.org/downloads/) and [alex](https://www.haskell.org/alex/) tool.
 
