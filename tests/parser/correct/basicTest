@@ -3,10 +3,14 @@
 .ast lazy bool done := 'n < k' ;
 .ast int x := 10 * n + k;
 .ast lazy int z := '(x + 1) ^ 2';
-
 .ast n := n + 1;
 .ast done := 'n <= k';
 .ast z := 10 *( k + 1);
 .ast z := '10 * (k + 1)';
-
 .ast ' xd ()' 
+.ast a <> 2
+.ast x = a * 67
+.ast z < b * n + 3
+.ast a + b - c * d % e ^ f
+.ast funcion(a,r,g,u,m,e,n,t,o,s)
+.ast bool func := f(t,e,s,t);
