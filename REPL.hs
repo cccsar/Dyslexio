@@ -13,7 +13,7 @@ import Data.Either (partitionEithers)
 import Data.List (intercalate)
 import System.Directory (doesFileExist)
 import System.Exit (exitSuccess)
-import System.FilePath (dropFileName,(</>))
+import System.FilePath (dropFileName)
 import System.IO (hFlush, stdout)
 
 
@@ -65,9 +65,9 @@ chooseLoad ustate input = do
                                }
 
         newState <- foldM 
-                    (\currentUstate (line,content) -> 
+                    (\currentUstate (line,lineContent) -> 
                         let modifiedUstate = currentUstate { BE.nextLine = line }
-                        in choice modifiedUstate content 
+                        in choice modifiedUstate lineContent 
                     ) 
                     baseState 
                     numberAndLineList
@@ -174,7 +174,7 @@ showAST tks ustate = do
 
     case parseResult of
         Right result -> putStrLn $ show result
-        Left error   -> putStrLn error 
+        Left parseError -> putStrLn parseError
 
     return ustate
 

@@ -61,15 +61,6 @@ numberedLines = numberLines 1
                 (preNewLine,postNewLine) = span (/='\n') xs
                 next = numberLines (n+1) (tail postNewLine)
 
--- | For now, optional
-checkIntegerOverflow :: Int -> Bool
-checkIntegerOverflow n
-    | n > uprBound || n < lwrBound = False
-    | otherwise                    = True
-    where
-        uprBound = 2147483647  -- Positive integer bound, equivalent to 2^31 - 1 (ommits sign bit)
-        lwrBound = -2147483648 -- Negative integer bound, equivalent to 2^31 (ommits sign bit)
-
 {- Relevant Virtual Machine functions -}
 
 -- | This function is a renaming of the alexScanTokens function that performs tokenization.
