@@ -38,8 +38,8 @@ data Instruction
    | Assignment Id Expr
 
 instance Show Instruction where
-    show (Assignment id expr)        = "assign(" ++ id ++ ", " ++ show expr ++ ")"
-    show (Inicialization tp id expr) = "def(" ++ show tp ++ ", " ++ id ++ ", " ++ show expr ++ ")" 
+    show (Assignment progId expr)        = "assign(" ++ progId ++ ", " ++ show expr ++ ")"
+    show (Inicialization tp progId expr) = "def(" ++ show tp ++ ", " ++ progId ++ ", " ++ show expr ++ ")" 
 
 data Expr
     -- Leafs == Non terminals
