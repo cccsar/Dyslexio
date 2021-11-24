@@ -13,31 +13,33 @@ import Data.List (intercalate)
  - Data definitions for the abstract syntax tree 
  -}
 
-data ConcreteType = Bool | Int deriving Show
+data ConcreteType = Bool | Int 
 
-data Type = Lazy ConcreteType | Concrete ConcreteType deriving Show
+instance Show ConcreteType where 
+    show Bool = "bool" 
+    show Int = "int"
+
+data Type = Lazy ConcreteType | Concrete ConcreteType 
+
+instance Show Type where
+    show (Lazy conc) = "lazy " ++ show conc
+    show (Concrete conc) = show conc
 
 type Id = String
 
 data Program = Ins [Instruction] | Ex Expr 
-    deriving Show
 
-{-
 instance Show Program where
     show (Ins xs)  = intercalate "\n" . map show $ xs
     show (Ex expr) = show expr
--}
 
 data Instruction 
    = Inicialization Type Id Expr
    | Assignment Id Expr
-   deriving Show
 
-{-
 instance Show Instruction where
-    show (Assignment id expr)        = show id ++ " := " ++ show expr
-    show (Inicialization tp id expr) = show tp ++ " " ++ show id ++ " := " ++ show expr
--}
+    show (Assignment id expr)        = "assign(" ++ id ++ ", " ++ show expr ++ ")"
+    show (Inicialization tp id expr) = "def(" ++ show tp ++ ", " ++ id ++ ", " ++ show expr ++ ")" 
 
 data Expr
     -- Leafs == Non terminals
@@ -71,13 +73,11 @@ data Expr
     | Parentheses Expr
     | Identifier Id
     | Function Id [Expr]
-    deriving Show
 
-{-
 instance Show Expr where
     show (IntExp num)               = show num
     show (BoolExp val)              = show val
-    show (LazyExp expr)             = showSourround expr "'" "'"
+    show (LazyExp expr)             = "lazyExpr( " ++ show expr ++ " )" 
 
     show (Add lse rse)              = showBinOp lse rse "+"
     show (Sub lse rse)              = showBinOp lse rse "-"
@@ -97,16 +97,12 @@ instance Show Expr where
     show (Or lse rse)               = showBinOp lse rse "||"
     show (Not expr)                 = showUnOp expr "!"
 
-    show (Parentheses expr)         = showSourround expr "(" ")"
+    show (Parentheses expr)         = show expr 
     show (Identifier name)          = name 
-    show (Function name exprs)       = name ++ "(" ++ (intercalate "," . map show $ exprs) ++ ")"
--}
+    show (Function name exprs)       = name ++ "( " ++ (intercalate ", " . map show $ exprs) ++ " )"
 
 showBinOp :: Expr -> Expr -> String -> String
-showBinOp left right op = show left ++ " " ++ op ++ " " ++ show right
+showBinOp left right op = op ++ "(" ++ show left ++ ", " ++ show right ++ ")"
 
 showUnOp :: Expr -> String -> String
 showUnOp expr op = op ++ show expr
-
-showSourround :: Expr -> String -> String -> String
-showSourround expr left right = left ++ " " ++ show expr ++ " " ++ right
