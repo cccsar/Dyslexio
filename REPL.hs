@@ -64,7 +64,6 @@ chooseLoad ustate input = do
                                , BE.pathName = filePath 
                                }
 
-        -- ### This one is a bit confusing, see if it can get simpler
         newState <- foldM 
                     (\currentUstate (line,content) -> 
                         let modifiedUstate = currentUstate { BE.nextLine = line }
@@ -90,7 +89,6 @@ chooseFailed ustate = do
             return ustate
 
         else do
-            -- ### This one is a bit confusing
             let errors = concatMap 
                           (\(filename,errorContext) -> 
                               map (\(line,errorString) -> 
@@ -141,7 +139,7 @@ onSuccessLex tokens inputLine action ustate = case action of
     "lexer" -> do putStrLn $ getAcceptationString inputLine tokens
                   return ustate
     "ast"   -> showAST tokens ustate
-    _       -> undefined -- ###
+    _       -> error "REPL Error --> Panic!: This condition shouldn't ever occur."
 
 {- | Print lexer error accordingly -}
 onFailLex :: [Err.TokenError] -> String ->  BE.UserState -> IO BE.UserState  
@@ -176,7 +174,7 @@ showAST tks ustate = do
 
     case parseResult of
         Right result -> putStrLn $ show result
-        Left error   -> putStrLn error -- ## Try to get specific parse errors
+        Left error   -> putStrLn error 
 
     return ustate
 

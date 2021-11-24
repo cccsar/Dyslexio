@@ -12,7 +12,7 @@ import Data.Maybe (fromJust)
 %name parse 
 %tokentype { ContextToken }
 %error { parseError }
-%monad { E } { thenE } { returnE }
+%monad { ErrorMonad } { bind } { Ok }
 
 %token
     int  { CtxToken { tk = TkInt }}
@@ -131,5 +131,11 @@ getId :: ContextToken -> String
 getId tk = case fromJust . stringContent $ tk of
     (Id el) -> el
 
-parseError _ = failE "Parse Error" 
+parseError :: [ContextToken] -> ErrorMonad a
+parseError [] = Failed "No Content"
+parseError (CtxToken { position = p, string = str, tk = token }:xs) = Failed (
+        "Syntax error --> related to \"" 
+        ++ str ++ "\" at " ++ show p ++ " coming from token: " 
+        ++ show token ++ "." 
+        )
 }

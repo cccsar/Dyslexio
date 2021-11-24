@@ -1,10 +1,7 @@
 module Error 
 ( TokenError(..)
-, ParseError(..)
-, E(..)
-, thenE
-, returnE
-, failE
+, ErrorMonad(..)
+, bind
 ) where
 
 {-
@@ -21,28 +18,12 @@ data TokenError = TkErr
 instance Show TokenError where
     show err = show (name err) ++ " at " ++ show (pos err)
 
+{- Type for error representation -}
 
-data ParseError = Error
+data ErrorMonad a = Ok a | Failed String
 
-{- Experimenting -}
-
-data E a = Ok a | Failed String
-
-thenE :: E a -> (a -> E b) -> E b
-m `thenE` k = 
+bind :: ErrorMonad a -> (a -> ErrorMonad b) -> ErrorMonad b
+m `bind` k = 
    case m of 
         Ok a -> k a
         Failed e -> Failed e
-
-returnE :: a -> E a
-returnE a = Ok a
-
-failE :: String -> E a
-failE err = Failed err
-
--- Use this to try to induce descriptive error messages
-catchE :: E a -> (String -> E a) -> E a
-catchE m k = 
-    case m of
-        Ok a -> Ok a
-        Failed e -> k e
