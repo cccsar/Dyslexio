@@ -59,63 +59,62 @@
 %nonassoc '=' '<>'
 %nonassoc '<' '<=' '>' '>='
 %left '+' '-'
-%left '\*' '%'
+%left '*' '%'
 %nonassoc '!'
 %right '^'
 
 %%
 
 PROGRAM ::
- : INSTS
-| E
+    : INSTS
+    | E
 
 INSTS ::
-: INST
- | INSTS INST
+        : INST
+        | INSTS INST
 
 INST ::
 INST : TP id ':=' E ';'
-| id ':=' E ';'
+     | id ':=' E ';'
 
 TP ::
 TP : lazy BASETP
- | BASETP
+   | BASETP
 
 BASETP ::
 BASETP : int
- | bool
+       | bool
 
 ES ::
- : E
- | ES ',' E
+    : E
+    | ES ',' E
 
 E ::
 E : numLiteral
- | true
- | false
- | '`' E '`'
+  | true
+  | false
+  | '`' E '`'
 
-| E '+' E
- | E '-' E
- | '-' E
- | '+' E
- | E '\*' E
- | E '%' E
- | E '^' E
+  | E '+' E
+  | E '-' E
+  | '-' E
+  | '+' E
+  | E '*' E
+  | E '%' E
+  | E '^' E
 
-| E '<' E
- | E '<=' E
- | E '>' E
- | E '>=' E
- | E '=' E
- | E '<>' E
+  | E '<' E
+  | E '<=' E
+  | E '>' E
+  | E '>=' E
+  | E '=' E
+  | E '<>' E
 
-| E '&&' E
- | E '||' E
- | '!' E
+  | E '&&' E
+  | E '||' E
+  | '!' E
 
-| id '(' ES ')'
-| '(' E ')'
- | id
-
+  | id '(' ES ')'
+  | '(' E ')'
+  | id
 ```
