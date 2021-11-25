@@ -4,52 +4,52 @@
 
 ### Entrada
 
-    <entrada> -> <acción> | <expresion>
+    <entrada> -> <acción> | <exp>
 
 ### Acciones
 
-    <acción> -> <definición> | <asignación>
-    <definicion> -> lazy <tipo> | <tipo>;
-    <tipo> -> int <asignacion> ; | bool <asignacion> ;
-    <asignación> -> <id> := <expresion> ;
+    <acción> -> <def> | <assign>
+    <def> -> lazy <tipo> | <tipo>;
+    <tipo> -> int <assig> ; | bool <assign> ;
+    <assign> -> <id> := <exp> ;
 
 ### Expresiones
 
-    <expresiones> -> <expresion>
-                   | <expresiones> , <expresion>
+    <exprs> -> <exp>
+             | <exprs> , <exp>
 
-    <expresion> -> <precedencia1>
-                 | id ( <expresiones> )
+    <exp> -> <exp1>
+           | <id> ( <expes> )
 
-    <precedencia1> -> <precedencia1> || <precedencia2>
-                    | <precedencia2>
-    <precedencia2> -> <precedencia2> && <precedencia3>
-                    | <precedencia3>
-    <precedencia3> -> <precedencia4> = <precedencia4>
-                    | <precedencia4> <> <precedencia4>
-                    | <precedencia4>
-    <precedencia4> -> <precedencia5> < <precedencia5>
-                    | <precedencia5> <= <precedencia5>
-                    | <precedencia5> > <precedencia5>
-                    | <precedencia5> >= <precedencia5>
-                    | <precedencia5>
-    <precedencia5> -> <precedencia5> + <precdencia6>
-                    | <precedencia5> - <precedencia6>
-                    | <precedencia6>
-    <precedencia6> -> <precedencia6> * <precedencia7>
-                    | <precedencia6> % <precedencia7>
-                    | <precedencia7>
-    <precedencia7> -> !<precedencia7>
-                    | -<precedencia7>
-                    | +<precedencia7>
-                    | <precedencia8>
-    <precedencia8> -> <precedencia9> ^ <precedencia8>
-                    | <precedencia9>
-    <precedencia9> -> ( <expresion> )
-                    | ' <expresion> '
-                    | <id>
-                    | <entero>
-                    | true | false
+    <exp1> -> <exp1> || <exp2>
+            | <exp2>
+    <exp2> -> <exp2> && <exp3>
+            | <exp3>
+    <exp3> -> <exp4> = <exp4>
+            | <exp4> <> <exp4>
+            | <exp4>
+    <exp4> -> <exp5> < <exp5>
+            | <exp5> <= <exp5>
+            | <exp5> > <exp5>
+            | <exp5> >= <exp5>
+            | <exp5>
+    <exp5> -> <exp5> + <precdencia6>
+            | <exp5> - <exp6>
+            | <exp6>
+    <exp6> -> <exp6> * <exp7>
+            | <exp6> % <exp7>
+            | <exp7>
+    <exp7> -> !<exp7>
+            | -<exp7>
+            | +<exp7>
+            | <exp8>
+    <exp8> -> <exp9> ^ <exp8>
+            | <exp9>
+    <exp9> -> ( <exp> )
+            | ' <exp> '
+            | <id>
+            | <entero>
+            | true | false
 
 ## Gramática para la Implementación
 
