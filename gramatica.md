@@ -9,10 +9,8 @@
 ### Acciones
 
     <acción> -> <definición> | <asignación>
-    <definicion> -> lazy <tipo>
-                  | <tipo>;
-    <tipo> -> int <asignacion> ;
-            | bool <asignacion> ;
+    <definicion> -> lazy <tipo> | <tipo>;
+    <tipo> -> int <asignacion> ; | bool <asignacion> ;
     <asignación> -> <id> :=  <expresion> ;
 
 ### Expresiones
