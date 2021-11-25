@@ -53,6 +53,7 @@
 
 ## Gramática para la Implementación
 
+```
 %left '||'
 %left '&&'
 %nonassoc '=' '<>'
@@ -64,12 +65,12 @@
 
 %%
 
-PROGRAM ::  
+PROGRAM ::
  : INSTS
 | E
 
 INSTS ::
-: INST  
+: INST
  | INSTS INST
 
 INST ::
@@ -77,46 +78,44 @@ INST : TP id ':=' E ';'
 | id ':=' E ';'
 
 TP ::
-TP : lazy BASETP  
+TP : lazy BASETP
  | BASETP
 
 BASETP ::
-BASETP : int  
+BASETP : int
  | bool
 
-ES ::  
- : E  
+ES ::
+ : E
  | ES ',' E
 
-E ::  
-E : numLiteral  
- | true  
- | false  
+E ::
+E : numLiteral
+ | true
+ | false
  | '`' E '`'
 
-| E '+' E  
- | E '-' E  
- | '-' E  
- | '+' E  
- | E '\*' E  
- | E '%' E  
+| E '+' E
+ | E '-' E
+ | '-' E
+ | '+' E
+ | E '\*' E
+ | E '%' E
  | E '^' E
 
-| E '<' E  
- | E '<=' E  
- | E '>' E  
- | E '>=' E  
- | E '=' E  
+| E '<' E
+ | E '<=' E
+ | E '>' E
+ | E '>=' E
+ | E '=' E
  | E '<>' E
 
-| E '&&' E  
- | E '||' E  
+| E '&&' E
+ | E '||' E
  | '!' E
 
 | id '(' ES ')'
-| '(' E ')'  
+| '(' E ')'
  | id
-
-```
 
 ```
