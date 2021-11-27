@@ -1,0 +1,7 @@
+.ast true || false || true
+.ast true && false && true
+.ast true && false || true
+.ast true || false && true 
+
+.ast !true && !false
+.ast !!true && !! false

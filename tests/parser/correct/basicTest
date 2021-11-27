@@ -7,7 +7,6 @@
 .ast done := 'n <= k';
 .ast z := 10 *( k + 1);
 .ast z := '10 * (k + 1)';
-.ast ' xd ()' 
 .ast a <> 2
 .ast x = a * 67
 .ast z < b * n + 3

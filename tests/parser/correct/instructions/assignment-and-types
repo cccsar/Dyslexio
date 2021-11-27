@@ -1,0 +1,26 @@
+.ast a := 42 ;
+.ast a:=b; 
+
+.ast a := true && false ; 
+.ast a:=true||false; 
+
+.ast a := b > c ;
+.ast a:=b>=c; 
+.ast a := b < c ; 
+.ast a:=b<=c; 
+
+.ast a := 1 + 2; 
+.ast a:=1-2;
+.ast a := 1 * 2;
+.ast a:=1%2;
+
+.ast a := - 1 ;
+.ast a:=+2; 
+.ast a := ! false ; 
+
+.ast a:=1^2^3;
+
+.ast a := a + ( b + ( c + d ) ) ;
+.ast a := '42+b';
+
+.ast a := 42 ; b := 37 ; c := 'a + b' ;

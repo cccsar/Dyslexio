@@ -1,0 +1,16 @@
+.ast 1 < 2
+.ast 1<=2
+.ast 1 > 2
+.ast 1>=2
+.ast 1 = 2
+.ast 1 <> 2
+
+.ast 1 + 2 < 3 + 4
+.ast 1-2<=3-4
+.ast 1 * 2 > 3 * 4
+.ast 1%2>=3*4
+.ast 1 ^ 2 = 3 ^ 4
+.ast -1<>-2
+
+.ast true && false = true || false
+.ast false||false<>true&&false

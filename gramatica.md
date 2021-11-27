@@ -4,24 +4,31 @@
 
 ### Entrada
 
-    <entrada> -> <acción> | <exp>
+`<entrada> -> <instrucciones> | <exp>`
 
 ### Acciones
 
-    <acción> -> <def> | <assign>
-    <def> -> lazy <tipo> | <tipo>;
-    <tipo> -> int <assig> ; | bool <assign> ;
-    <assign> -> <id> := <exp> ;
+```
+    <instrucciones> -> <instrucciones> <instruccion>
+                     | <instruccion> 
+
+    <instruccion> -> <tipo> <id> := <exp> ;
+                   | <id> := <exp> ;
+
+    <tipo> -> lazy <tipoBase>
+            | <tipoBase>
+
+    <tipoBase> -> int
+                | bool
+```
 
 ### Expresiones
 
-    <exprs> -> <exp>
-             | <exprs> , <exp>
+```
+    <exprs> -> <exprs> , <exp>
+             | <exp>
 
-    <exp> -> <exp1>
-           | <id> ( <expes> )
-
-    <exp1> -> <exp1> || <exp2>
+    <exp> -> <exp> || <exp2>
             | <exp2>
     <exp2> -> <exp2> && <exp3>
             | <exp3>
@@ -33,25 +40,32 @@
             | <exp5> > <exp5>
             | <exp5> >= <exp5>
             | <exp5>
-    <exp5> -> <exp5> + <precdencia6>
+    <exp5> -> <exp5> + <exp6>
             | <exp5> - <exp6>
             | <exp6>
     <exp6> -> <exp6> * <exp7>
             | <exp6> % <exp7>
             | <exp7>
-    <exp7> -> !<exp7>
-            | -<exp7>
-            | +<exp7>
+    <exp7> -> ! <exp7>
+            | - <exp7>
+            | + <exp7>
             | <exp8>
     <exp8> -> <exp9> ^ <exp8>
             | <exp9>
-    <exp9> -> ( <exp> )
-            | ' <exp> '
+    <exp9> -> ' <exp> '
+            | <id> ( <exprs> ) 
+            | ( <expr> ) 
             | <id>
             | <entero>
-            | true | false
+            | true 
+            | false
+```
+
+Se juntan tipos no "compatibles" en el reconocedor pues se considera que el verificar esto es parte del sistema de tipos.
 
 ## Gramática para la Implementación
+
+Las precedencias en el generador de parser `happy` se precentan de menor a mayor, en orden de aparicion:
 
 ```
 %left '||'
@@ -60,7 +74,7 @@
 %nonassoc '<' '<=' '>' '>='
 %left '+' '-'
 %left '*' '%'
-%nonassoc '!'
+%nonassoc '!' NEG
 %right '^'
 
 %%
@@ -97,8 +111,8 @@ E : numLiteral
 
   | E '+' E
   | E '-' E
-  | '-' E
-  | '+' E
+  | '-' E %prec NEG
+  | '+' E %prec NEG
   | E '*' E
   | E '%' E
   | E '^' E

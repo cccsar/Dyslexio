@@ -1,0 +1,26 @@
+.ast int a := 42 ;
+.ast bool a:=b; 
+
+.ast int a := true && false ; 
+.ast bool a:=true||false; 
+
+.ast bool a := b > c ;
+.ast bool a:=b>=c; 
+.ast bool a := b < c ; 
+.ast bool a:=b<=c; 
+
+.ast int a := 1 + 2; 
+.ast int a:=1-2;
+.ast int a := 1 * 2;
+.ast int a:=1%2;
+
+.ast int a := - 1 ;
+.ast int a:=+2; 
+.ast bool a := ! false ; 
+
+.ast int a:=1^2^3;
+
+.ast int a := a + ( b + ( c + d ) ) ;
+.ast lazy int a := '42+b';
+
+.ast int a := 42 ; int b := 37 ; lazy int c := 'a + b' ;

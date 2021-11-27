@@ -1,0 +1,5 @@
+.ast gcd(42,3)
+.ast fibo(50)
+.ast etc(1,2,3,4,5,6,7)
+.ast prueba(a,1,b,2,c,3)
+.ast mas(1,1+(2*3))
