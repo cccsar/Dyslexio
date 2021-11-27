@@ -4,7 +4,9 @@
 
 ### Entrada
 
-`<entrada> -> <instrucciones> | <exp>`
+```
+<entrada> -> <instrucciones> | <exp>
+```
 
 ### Acciones
 
