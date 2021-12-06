@@ -2,8 +2,6 @@
 
 Interpreter for the LIPS programming language for the subject CI-3725 : Translators and Interpreters
 
-## Lexer
-
 ## Required installations
 
 This project compiles with ```ghc version 8.6.5``` , ```alex version 3.2.4``` and ```happy 1.19.12``` and is intended for Unix Systems only.
