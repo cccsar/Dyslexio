@@ -44,4 +44,61 @@ The REPL consist of *special commands* and expressions to interpretate. Valid sp
 ---
 ## Grammar
 
-The file ```gramatica.md``` contains a detailed description of the grammar used by Dislexio. The grammar is both in a human readable format and in a in the format used by ```happy```. The grammar is unambiguous and includes precedence and associative rules.
+The file ```gramatica.md``` contains a detailed description of the grammar used by Dislexio. The grammar is both in a human readable format and in a in the format used by ```happy```. The grammar is unambiguous and includes precedence and associative rules. 
+
+A copy of the human readable format is presented next for clarity's:
+
+Entrada
+
+    <entrada> -> <instrucciones> | <exp>
+
+Acciones
+
+    <instrucciones> -> <instrucciones> <instruccion>
+                     | <instruccion> 
+
+    <instruccion> -> <tipo> <id> := <exp> ;
+                   | <id> := <exp> ;
+
+    <tipo> -> lazy <tipoBase>
+            | <tipoBase>
+
+    <tipoBase> -> int
+                | bool
+
+Expresiones
+
+    <exprs> -> <exprs> , <exp>
+             | <exp>
+
+    <exp> -> <exp> || <exp2>
+            | <exp2>
+    <exp2> -> <exp2> && <exp3>
+            | <exp3>
+    <exp3> -> <exp4> = <exp4>
+            | <exp4> <> <exp4>
+            | <exp4>
+    <exp4> -> <exp5> < <exp5>
+            | <exp5> <= <exp5>
+            | <exp5> > <exp5>
+            | <exp5> >= <exp5>
+            | <exp5>
+    <exp5> -> <exp5> + <exp6>
+            | <exp5> - <exp6>
+            | <exp6>
+    <exp6> -> <exp6> * <exp7>
+            | <exp6> % <exp7>
+            | <exp7>
+    <exp7> -> ! <exp7>
+            | - <exp7>
+            | + <exp7>
+            | <exp8>
+    <exp8> -> <exp9> ^ <exp8>
+            | <exp9>
+    <exp9> -> ' <exp> '
+            | <id> ( <exprs> ) 
+            | ( <expr> ) 
+            | <id>
+            | <entero>
+            | true 
+            | false
