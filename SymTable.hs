@@ -13,15 +13,23 @@ where
  -}
 
 import qualified Data.Map as M
-import AST (Type, Expr)
+import qualified AST as A (Type, Expr) 
 
-data SymbolContext = Context { symbolType :: Maybe Type}
+data Result 
+    = BOOL Bool
+    | INT Int
+    | LAZY A.Expr -- tentative
+
+data SymbolContext = Context { 
+    symbolType :: Maybe A.Type,
+    symbolContent :: Maybe Result
+    }
 
 type SymTable = M.Map String SymbolContext
 
 {- Helper functions -}
 
-insertSymbolInfo :: String -> Type -> SymTable -> SymTable
+insertSymbolInfo :: String -> SymbolContext  -> SymTable -> SymTable
 insertSymbolInfo = M.insert 
 
 reset :: SymTable
@@ -39,8 +47,7 @@ predefinedSymbols = [
     "irandom", 
     "fibo", 
     "gcd",
-    "now"
-]
+    "now" ]
 
 -- Initial symbolTable to work with
-initialST = M.fromList $ zip predefinedSymbols (replicate Nothing)
+initialST = M.fromList $ zip predefinedSymbols (repeat (Context {symbolType = Nothing, symbolContent = Nothing}))

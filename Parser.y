@@ -74,57 +74,57 @@ import Data.Maybe (fromJust)
 %%
 
 PROGRAM :: { Program } 
-    : INSTS { Ins (reverse $1) }
-    | E     { Ex $1 }
+    : INSTS { let exprList = reverse $1 in Ins {list = exprList, instructionPos = getPosition (head exprList) } }
+    | E     { Ex {expr = $1, exprPos = getPosition $1 } }
 
 INSTS :: { [Instruction] }
         : INST         { [$1] }
         | INSTS INST { $2 : $1 }
 
 INST :: { Instruction }
-INST : TP id ':=' E ';' { Inicialization $1 (getId $2) $4 }
-     | id ':=' E ';'    { Assignment (getId $1) $3 }
+INST : TP id ':=' E ';' { Inicialization { initType = $1, initId = (getId $2), initExpr = $4, initPos = position $3 } }
+     | id ':=' E ';'    { Assignment { assignId = (getId $1), assignExpr = $3, assignPos = position $2 } }
 
 TP :: { Type }
-TP : lazy BASETP { Lazy $2 } 
-   | BASETP      { Concrete $1 }
+TP : lazy BASETP { Lazy { tp = $2, lazyTypePos = position $1 } } 
+   | BASETP      { Concrete {tp = $1, concreteTypePos = getPosition ($1) } }
 
 BASETP :: { ConcreteType }
-BASETP : int   { Int }
-       | bool  { Bool }
+BASETP : int   { Int { intTypePos = position $1 } }
+       | bool  { Bool { boolTypePos = position $1 } }
 
 ES :: { [Expr] } 
     : E           { [$1] }
     | ES ',' E    { $3 : $1 }
                
 E :: { Expr }  
-E : numLiteral      { let Integer x = fromJust (stringContent $1) in IntExp x }
-  | true            { BoolExp True }
-  | false           { BoolExp False }
-  | '`' E '`'       { LazyExp $2 }
+E : numLiteral      { let Integer x = fromJust (stringContent $1) in IntExp { intVal = x, intPos = position $1 } }
+  | true            { BoolExp { boolVal = True , boolPos = position $1 } }
+  | false           { BoolExp { boolVal = False, boolPos = position $1 } }
+  | '`' E '`'       { LazyExp { lazyVal = $2 , lazyPos = position $1 } }
                   
-  | E '+' E         { Add $1 $3 }
-  | E '-' E         { Sub $1 $3 }
-  | '-' E %prec NEG { Minus $2 }
-  | '+' E %prec NEG { Mas $2 }
-  | E '*' E         { Mult $1 $3 }
-  | E '%' E         { Mod $1 $3 }
-  | E '^' E         { Power $1 $3 }
+  | E '+' E         { Add { lhs = $1 , rhs = $3 , addPos = position $2 } }
+  | E '-' E         { Sub { lhs = $1 , rhs = $3 , subPos = position $2 } }
+  | '-' E %prec NEG { Minus { minusVal = $2, minusPos = position $1 } }
+  | '+' E %prec NEG { Mas { masVal = $2, masPos = position $1} }
+  | E '*' E         { Mult { lhs = $1 , rhs = $3, multPos = position $2} }
+  | E '%' E         { Mod { lhs = $1 , rhs = $3 , modPos = position $2 } }
+  | E '^' E         { Power { lhs = $1 , rhs = $3, powerPos = position $2 } }
                   
-  | E '<' E         { LessThan $1 $3 }
-  | E '<=' E        { LessEqualThan $1 $3 }
-  | E '>' E         { GreaterThan $1 $3 }
-  | E '>=' E        { GreaterEqualThan $1 $3 }
-  | E '=' E         { Equal $1 $3 }
-  | E '<>' E        { NotEqual $1 $3 }
+  | E '<' E         { LessThan { lhs = $1, rhs = $3, ltPos = position $2 } }
+  | E '<=' E        { LessEqualThan { lhs = $1, rhs = $3, letPos = position $2 } }
+  | E '>' E         { GreaterThan { lhs = $1, rhs = $3, gtPos = position $2 } }
+  | E '>=' E        { GreaterEqualThan { lhs = $1 , rhs = $3 , geqPos = position $2 } }
+  | E '=' E         { Equal { lhs = $1, rhs = $3, eqPos = position $2 } }
+  | E '<>' E        { NotEqual { lhs = $1, rhs = $3, neqPos = position $2 } }
                   
-  | E '&&' E        { And $1 $3 }
-  | E '||' E        { Or $1 $3 }
-  | '!' E           { Not $2 }
+  | E '&&' E        { And { lhs = $1, rhs = $3 , andPos = position $2 } }
+  | E '||' E        { Or { lhs = $1, rhs = $3, orPos = position $2 } }
+  | '!' E           { Not { notVal = $2, notPos = position $1 } }
                   
-  | id '(' ES ')'   { Function (getId $1) (reverse $3) }
-  | '(' E ')'       { Parentheses $2 }
-  | id              { Identifier (getId $1) }  
+  | id '(' ES ')'   { Function { functionName = (getId $1), functionArguments = (reverse $3), functionPos = position $1 } }
+  | '(' E ')'       { Parentheses { parenthVal = $2 , parenthPos = position $1 } }
+  | id              { Identifier { idName = (getId $1), idPos = position $1 } }  
 
 {
 getId :: ContextToken -> String
