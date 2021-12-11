@@ -18,6 +18,11 @@ data ConcreteType
     = Bool  { boolTypePos :: Int }
     | Int   { intTypePos :: Int }
 
+instance Eq ConcreteType where
+    Bool{} == Bool{} = True
+    Int {} == Int{} = True
+    _ == _ = False
+
 instance Show ConcreteType where
     show Bool {} = "bool"
     show Int {} = "int"
@@ -25,6 +30,11 @@ instance Show ConcreteType where
 data Type
     = Lazy { tp :: ConcreteType, lazyTypePos :: Int }
     | Concrete { tp :: ConcreteType , concreteTypePos :: Int}
+
+instance Eq Type where
+    a@Lazy {} == b@Lazy {} = tp a == tp b 
+    a@Concrete{} == b@Concrete{} = tp a == tp b
+    _ == _ = False
 
 instance Show Type where
     show Lazy {tp = conc} = "lazy " ++ show conc

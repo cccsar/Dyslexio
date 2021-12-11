@@ -73,6 +73,7 @@ chooseLoad ustate input = do
         return newState { BE.nextLine        = BE.nextLine ustate
                         , BE.currentOpenFile = BE.currentOpenFile ustate
                         , BE.pathName        = BE.pathName ustate
+                        , BE.symT            = BE.symT ustate
                         } 
         else do
             putStrLn $ "ERROR: No such file \"" ++ filename ++ "\"."

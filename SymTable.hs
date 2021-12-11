@@ -1,7 +1,13 @@
 module SymTable 
 ( SymTable
+, SymbolContext (..)
+, Result (..)
 , insertSymbolInfo
+, getSymbolContext
+, getSymbolType
+, getSymbolContent
 , reset
+, initialST
 )
 where
 
@@ -31,6 +37,19 @@ type SymTable = M.Map String SymbolContext
 
 insertSymbolInfo :: String -> SymbolContext  -> SymTable -> SymTable
 insertSymbolInfo = M.insert 
+
+getSymbolContext :: String -> SymTable -> Maybe SymbolContext
+getSymbolContext = M.lookup
+
+getSymbolType :: String -> SymTable -> Either String (Maybe A.Type)
+getSymbolType id symT = case getSymbolContext id symT of
+    Nothing      -> Left "Symbol not found"
+    Just context -> Right (symbolType context)
+
+getSymbolContent :: String -> SymTable -> Either String (Maybe Result)
+getSymbolContent id symT = case getSymbolContext id symT of
+    Nothing      -> Left $ "Symbol '" ++ id ++ "' not found"
+    Just context -> Right (symbolContent context)
 
 reset :: SymTable
 reset = initialST

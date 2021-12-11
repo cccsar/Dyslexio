@@ -17,7 +17,7 @@ data TokenError = TkErr
 instance Show TokenError where
     show err = show (name err) ++ " at " ++ show (pos err)
 
-{- Type for error representation -}
+{- Type for parse error representation -}
 
 data ErrorMonad a = Ok a | Failed String
 

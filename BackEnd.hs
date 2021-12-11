@@ -1,10 +1,16 @@
 module BackEnd
 ( UserState(..)
+, GlobalState (..)
+, insertSymbolST
+, symbolDefinedST  
+, getSymbolContextST 
+, getSymbolTypeST
 , numberedLines
 , lexer
 , insertDictionary
 , baseUserState
 , parse
+
 )
 where
 
@@ -13,7 +19,9 @@ where
  -}
 
 import Data.Char(isSpace)
+import Data.Maybe (isJust)
 import System.FilePath(FilePath)
+import Control.Monad.State
 
 import qualified Data.Map as M
 
@@ -21,6 +29,7 @@ import qualified AST as A
 import qualified Error as Err
 import qualified Lexer as L
 import qualified Parser as P
+import qualified SymTable as ST
 import qualified Tokens as Tk
 
 
@@ -34,15 +43,87 @@ data UserState = UState
     { errorDictionary :: Dictionary Filename ErrorContext,
       nextLine :: Int,
       currentOpenFile :: Maybe Filename,
-      pathName :: FilePath
+      pathName :: FilePath,
+      symT :: ST.SymTable
     }
 
+type GlobalState a = StateT UserState IO a
 
-{- Helper functions -}
+
+-- | Statefull insertion of a symbol into GlobalState symT 
+insertSymbolST :: String -> ST.SymbolContext -> GlobalState ()
+insertSymbolST id context = do
+    tentativeState <- get
+
+    let newST = ST.insertSymbolInfo id context (symT tentativeState)
+
+    put tentativeState { symT = newST } 
+
+-- | Statefull query of a symbol into GlobalState symT
+symbolDefinedST :: String -> GlobalState Bool
+symbolDefinedST id = fmap isJust (getSymbolContextST id)
+
+-- | Statefull query of symbol context.
+getSymbolContextST :: String -> GlobalState (Maybe ST.SymbolContext)
+getSymbolContextST id = do 
+    tentativeState <- get
+
+    let context = ST.getSymbolContext id (symT tentativeState)
+
+    return context
+
+-- | Statefull query of symbol type.
+getSymbolTypeST :: String -> GlobalState (Maybe A.Type)
+getSymbolTypeST id = do  
+    tentativeState <- get
+
+    case ST.getSymbolType id (symT tentativeState) of 
+        Left errorMsg -> do 
+            lift $ putStrLn errorMsg
+            -- insertError errorMsg ###
+            return Nothing
+        Right tp -> return tp
+
+-- | Statefull query of symbol content.
+getSymbolContentST :: String -> GlobalState (Maybe ST.Result)
+getSymbolContentST id = do  
+    tentativeState <- get
+
+    case ST.getSymbolContent id (symT tentativeState) of 
+        Left errorMsg -> do 
+            -- insertError errorMsg ###
+            lift $ putStrLn errorMsg
+            return Nothing
+        Right tp -> return tp
+
+-- | Insertion of error into state ??
+{-
+insertError :: String -> GlobalState ()
+insertError errMsg = do
+    tentativeState <- get
+
+    let newErrors = errMsg : errors tentativeState
+
+
+    put tentativeState { errors = newErrors }
+-}
+
+{- Functions for error dictionary -}
 
 -- | Generic function to append list elements in map where "values" are keys.
 insertDictionary :: Ord k => k -> a -> M.Map k [a] -> M.Map k [a]
 insertDictionary word meaning = M.insertWith (\a b-> b ++ a) word [meaning]
+
+-- | Statefull insertion on error dictionary
+insertDictionaryST :: Filename -> ErrorContext -> GlobalState ()
+insertDictionaryST file errorContext = do 
+    gState <- get 
+
+    let newDict = insertDictionary file errorContext (errorDictionary gState)
+
+    put gState {errorDictionary = newDict}
+
+{- Helper functions -}
 
 {- | Given a string repreNewLinesenting a file, returns an association list between the line 
  - number and the line content disregarding empty or only whitespace lines.
@@ -84,4 +165,6 @@ baseUserState = UState
                     , nextLine = 1
                     , currentOpenFile = Nothing
                     , pathName = ""
+                    , symT = ST.initialST
                     }
+
