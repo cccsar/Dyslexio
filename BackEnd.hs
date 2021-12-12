@@ -125,7 +125,7 @@ insertDictionaryST file errorContext = do
 
 {- Helper functions -}
 
-{- | Given a string repreNewLinesenting a file, returns an association list between the line 
+{- | Given a string representing a file, returns an association list between the line 
  - number and the line content disregarding empty or only whitespace lines.
  -}
 numberedLines :: String -> [(Int,String)]
