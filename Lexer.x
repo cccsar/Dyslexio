@@ -58,7 +58,6 @@ tokens :-
     \:                                  { buildToken Tk.TkColon }
     \::                                 { buildToken Tk.TkColonColon }
     while                               { buildToken Tk.TkWhile }
-    if                                  { buildToken Tk.TkIf }
 
     -- Ids                               
     ([$alpha\_]){1,}[$alpha\_$digit]*   { buildToken Tk.TkId  }

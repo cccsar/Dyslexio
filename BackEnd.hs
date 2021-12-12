@@ -72,16 +72,11 @@ getSymbolContextST id = do
     return context
 
 -- | Statefull query of symbol type.
-getSymbolTypeST :: String -> GlobalState (Maybe A.Type)
+getSymbolTypeST :: String -> GlobalState (Either String (Maybe A.Type))
 getSymbolTypeST id = do  
     ustate <- get
 
-    case ST.getSymbolType id (symT ustate) of 
-        Left errorMsg -> do 
-            lift $ putStrLn errorMsg
-            -- insertError errorMsg ###
-            return Nothing
-        Right tp -> return tp
+    return $ ST.getSymbolType id (symT ustate) 
 
 -- | Statefull query of symbol content.
 getSymbolContentST :: String -> GlobalState (Maybe ST.Result)

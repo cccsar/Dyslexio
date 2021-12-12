@@ -76,5 +76,4 @@ data Token
     | TkColon
     | TkColonColon
     | TkWhile
-    | TkIf
     deriving Show

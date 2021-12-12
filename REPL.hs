@@ -23,6 +23,7 @@ import qualified Data.Map as M
 import qualified BackEnd as BE
 import qualified Error as Err (TokenError)
 import qualified Tokens as Tk (ContextToken)
+import qualified TypeVer as Tv 
 
 
 -- | Prompt display and user inputut.
@@ -177,12 +178,21 @@ onFailLex errors inputLine = do
 
 validate :: [Tk.ContextToken] -> BE.GlobalState () 
 validate tks = do
-    ustate <- get
-
     let parseResult = BE.parse tks
 
     case parseResult of
-        Right result    -> lift $ putStrLn $ show result
+        Right result    -> do 
+            typeverResult <- Tv.validateProgram result
+
+            case typeverResult of 
+                Left xs -> do
+                    if all (==True) xs then 
+                        lift $ putStrLn "OK: All actions properly performed."
+                    else 
+                        lift $ putStrLn "Error: Some actions weren't performed."
+                Right (Just tp) -> lift $ putStrLn $ "Expression type is: "++ show tp 
+                Right _         -> lift $ putStrLn "Error: Type Error"
+
         Left parseError -> lift $ putStrLn parseError
 
 {- | Given a input stream of tokens, returns a string representation of the AST
@@ -190,8 +200,6 @@ validate tks = do
  -}
 showAST :: [Tk.ContextToken] -> BE.GlobalState () 
 showAST tks = do
-    ustate <- get
-
     let parseResult = BE.parse tks
 
     case parseResult of

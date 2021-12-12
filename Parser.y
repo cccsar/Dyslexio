@@ -60,7 +60,6 @@ import Data.Maybe (fromJust)
     ':'   { CtxToken { tk = TkColon}}
     '::'  { CtxToken { tk = TkColonColon}}
     while { CtxToken { tk = TkWhile}}
-    if    { CtxToken { tk = TkIf}}
 
 %left '||'
 %left '&&' 
