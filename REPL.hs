@@ -137,9 +137,7 @@ process inputLine = checkLexErrors inputLine validateAction --putStrLn $ "ERROR:
 
 {- | Given user or file input, check whether there is a lexer error and act accordingly -}
 checkLexErrors :: String -> String -> BE.GlobalState () 
-checkLexErrors inputLine action = do
-    ustate <- get
-    
+checkLexErrors inputLine action = do 
     let scan = BE.lexer inputLine
         (errors,tokens) = partitionEithers scan
 
@@ -171,10 +169,8 @@ onFailLex errors inputLine = do
             -- Update error dictionary with found errors.
             let lineNumber    = BE.nextLine ustate
                 errorContext  = (lineNumber,errorString)
-                newErrorTrack = BE.insertDictionary filename errorContext 
-                                    (BE.errorDictionary ustate)
- 
-            put $ ustate { BE.errorDictionary = newErrorTrack }
+
+            BE.insertDictionaryST filename errorContext
  
         _             -> lift $ putStrLn (getErrorString inputLine errors)
             -- Print layout when errors are typed directly.

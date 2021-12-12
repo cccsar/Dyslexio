@@ -43,12 +43,12 @@ getSymbolContext = M.lookup
 
 getSymbolType :: String -> SymTable -> Either String (Maybe A.Type)
 getSymbolType id symT = case getSymbolContext id symT of
-    Nothing      -> Left "Symbol not found"
+    Nothing      -> Left $ "Symbol '" ++ id ++ "' not in environment."
     Just context -> Right (symbolType context)
 
 getSymbolContent :: String -> SymTable -> Either String (Maybe Result)
 getSymbolContent id symT = case getSymbolContext id symT of
-    Nothing      -> Left $ "Symbol '" ++ id ++ "' not found"
+    Nothing      -> Left $ "Symbol '" ++ id ++ "' not in environment."
     Just context -> Right (symbolContent context)
 
 reset :: SymTable

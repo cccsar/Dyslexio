@@ -106,5 +106,50 @@ validateInstruction elem@Assignment{} = do
 
 
 validateExpr :: Expr -> BE.GlobalState (Maybe Type)
-validateExpr Identifier {} = undefined
-validateExpr Function {} = undefined
+validateExpr elem@Identifier {} = BE.getSymbolTypeST (idName elem)
+validateExpr elem@Function {} = do 
+    check <- BE.symbolDefinedST (functionName elem)
+
+    if check then do 
+        case (functionName elem) of 
+            "if"      -> case functionArguments elem of 
+                [boolExpr, sucExpr, failExpr] -> do 
+                    typeForCondition <- validateExpr boolExpr
+                    typeForSuccess   <- validateExpr sucExpr
+                    typeForFailure   <- validateExpr failExpr
+
+                    case (typeForCondition, typeForSuccess, typeForFailure) of 
+                        (Just tp1, Just tp2, Just tp3) -> undefined
+                        _                              -> undefined
+                _ -> undefined
+            "type"    -> case functionArguments elem of 
+                [exp] -> undefined
+                _ -> undefined
+            "ltype"   -> case functionArguments elem of 
+                [exp] -> undefined
+                _ -> undefined
+            "cvalue"  -> case functionArguments elem of 
+                [exp] -> undefined
+                _ -> undefined
+            "reset"   -> case functionArguments elem of 
+                [] -> undefined
+                _ -> undefined
+            "irandom" -> case functionArguments elem of 
+                [exp] -> undefined
+                _ -> undefined
+            "fibo"    -> case functionArguments elem of 
+                [exp] -> undefined
+                _ -> undefined
+            "gcd"     -> case functionArguments elem of 
+                [expM, expn] -> undefined
+                _ -> undefined
+            "now"     -> case functionArguments elem of 
+                [] -> undefined
+                _ -> undefined
+            _ -> undefined
+        else do 
+            let errorMsg = functionName elem ++ " is not a Dyslexio reckognized function."
+
+            lift $ putStrLn errorMsg 
+
+            return Nothing

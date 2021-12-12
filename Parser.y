@@ -94,8 +94,12 @@ BASETP : int   { Int { intTypePos = position $1 } }
        | bool  { Bool { boolTypePos = position $1 } }
 
 ES :: { [Expr] } 
-    : E           { [$1] }
-    | ES ',' E    { $3 : $1 }
+    : {- empty -} { [] }
+    | ESS         { $1 }
+
+ESS :: { [Expr] } 
+    : E            { [$1] }
+    | ESS ',' E    { $3 : $1 }
                
 E :: { Expr }  
 E : numLiteral      { let Integer x = fromJust (stringContent $1) in IntExp { intVal = x, intPos = position $1 } }

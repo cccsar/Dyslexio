@@ -1,16 +1,15 @@
 module BackEnd
 ( UserState(..)
 , GlobalState (..)
+, insertDictionaryST
 , insertSymbolST
 , symbolDefinedST  
 , getSymbolContextST 
 , getSymbolTypeST
 , numberedLines
-, lexer
-, insertDictionary
 , baseUserState
+, lexer
 , parse
-
 )
 where
 
@@ -53,11 +52,11 @@ type GlobalState a = StateT UserState IO a
 -- | Statefull insertion of a symbol into GlobalState symT 
 insertSymbolST :: String -> ST.SymbolContext -> GlobalState ()
 insertSymbolST id context = do
-    tentativeState <- get
+    ustate <- get
 
-    let newST = ST.insertSymbolInfo id context (symT tentativeState)
+    let newST = ST.insertSymbolInfo id context (symT ustate)
 
-    put tentativeState { symT = newST } 
+    put ustate { symT = newST } 
 
 -- | Statefull query of a symbol into GlobalState symT
 symbolDefinedST :: String -> GlobalState Bool
@@ -66,18 +65,18 @@ symbolDefinedST id = fmap isJust (getSymbolContextST id)
 -- | Statefull query of symbol context.
 getSymbolContextST :: String -> GlobalState (Maybe ST.SymbolContext)
 getSymbolContextST id = do 
-    tentativeState <- get
+    ustate <- get
 
-    let context = ST.getSymbolContext id (symT tentativeState)
+    let context = ST.getSymbolContext id (symT ustate)
 
     return context
 
 -- | Statefull query of symbol type.
 getSymbolTypeST :: String -> GlobalState (Maybe A.Type)
 getSymbolTypeST id = do  
-    tentativeState <- get
+    ustate <- get
 
-    case ST.getSymbolType id (symT tentativeState) of 
+    case ST.getSymbolType id (symT ustate) of 
         Left errorMsg -> do 
             lift $ putStrLn errorMsg
             -- insertError errorMsg ###
@@ -87,9 +86,9 @@ getSymbolTypeST id = do
 -- | Statefull query of symbol content.
 getSymbolContentST :: String -> GlobalState (Maybe ST.Result)
 getSymbolContentST id = do  
-    tentativeState <- get
+    ustate <- get
 
-    case ST.getSymbolContent id (symT tentativeState) of 
+    case ST.getSymbolContent id (symT ustate) of 
         Left errorMsg -> do 
             -- insertError errorMsg ###
             lift $ putStrLn errorMsg
@@ -100,12 +99,12 @@ getSymbolContentST id = do
 {-
 insertError :: String -> GlobalState ()
 insertError errMsg = do
-    tentativeState <- get
+    ustate <- get
 
-    let newErrors = errMsg : errors tentativeState
+    let newErrors = errMsg : errors ustate
 
 
-    put tentativeState { errors = newErrors }
+    put ustate { errors = newErrors }
 -}
 
 {- Functions for error dictionary -}
@@ -117,11 +116,11 @@ insertDictionary word meaning = M.insertWith (\a b-> b ++ a) word [meaning]
 -- | Statefull insertion on error dictionary
 insertDictionaryST :: Filename -> ErrorContext -> GlobalState ()
 insertDictionaryST file errorContext = do 
-    gState <- get 
+    ustate <- get 
 
-    let newDict = insertDictionary file errorContext (errorDictionary gState)
+    let newDict = insertDictionary file errorContext (errorDictionary ustate)
 
-    put gState {errorDictionary = newDict}
+    put ustate {errorDictionary = newDict}
 
 {- Helper functions -}
 
