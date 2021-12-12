@@ -24,6 +24,7 @@ import qualified BackEnd as BE
 import qualified Error as Err (TokenError)
 import qualified Tokens as Tk (ContextToken)
 import qualified TypeVer as Tv 
+import qualified SymTable as ST
 
 
 -- | Prompt display and user inputut.
@@ -48,6 +49,9 @@ choice input = case words input of
     [".failed"]  -> chooseFailed 
     [".reset"]   -> chooseReset 
     (".ast":xs)  -> checkLexErrors (unwords xs) astAction 
+    (".symT":xs) -> do
+        ustate <- get
+        lift $ putStrLn (ST.prettySymT (BE.symT ustate))
     ["."]        -> lift $ exitSuccess
     _            -> process input 
 

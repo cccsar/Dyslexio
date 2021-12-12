@@ -48,7 +48,7 @@ validateInstruction elem@Inicialization{} = do
                     reportTypeError errorMsg
                     -- insertError errorMsg ###
                     return False
-                Just tp -> if tp `relaxedTypeEquality` (initType elem) then do
+                Just tp -> if (initType elem) `relaxedTypeEquality` tp  then do
      
                         let newSymbolContext = ST.Context { 
                             ST.symbolType = expressionType,
