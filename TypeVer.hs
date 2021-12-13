@@ -211,7 +211,7 @@ validateExpr elem@Function {} = do
                     check <- BE.symbolDefinedST (idName idElem) 
 
                     if check then do
-                        result <- BE.getSymbolTypeST (idName elem) 
+                        result <- BE.getSymbolTypeST (idName idElem) 
                         case result of 
                             Left errorMsg -> do  
                                 reportTypeError errorMsg
@@ -232,6 +232,12 @@ validateExpr elem@Function {} = do
 
                         reportTypeError errorMsg
                         return Nothing
+                [_] -> do 
+                    let errorMsg = "Invalid use. 'cvalue' expects a variable as an argument. Related to function "
+                                    ++ " at column " ++ show (functionPos elem) ++ "."
+
+                    reportTypeError errorMsg
+                    return Nothing
                 _ -> reportInvalidNArgs 1 (functionPos elem) "cvalue"
 
             "reset"   -> case functionArguments elem of 
