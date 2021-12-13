@@ -17,7 +17,6 @@ import Data.Maybe (fromJust)
 %token
     int  { CtxToken { tk = TkInt }}
     bool { CtxToken { tk = TkBool }}
-    type { CtxToken { tk = TkType}}
     lazy { CtxToken { tk = TkLazy}}
  
     numLiteral { CtxToken { tk = TkNum}}

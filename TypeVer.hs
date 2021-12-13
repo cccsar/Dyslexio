@@ -181,7 +181,7 @@ validateExpr elem@Function {} = do
                     check <- BE.symbolDefinedST (idName idElem) 
 
                     if check then do
-                        result <- BE.getSymbolTypeST (idName elem) 
+                        result <- BE.getSymbolTypeST (idName idElem) 
                         case result of 
                             Left errorMsg -> do  
                                 reportTypeError errorMsg

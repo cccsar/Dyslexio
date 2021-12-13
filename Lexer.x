@@ -16,7 +16,6 @@ tokens :-
     -- Reserved words                      
     int                                 { buildToken Tk.TkInt }   
     bool                                { buildToken Tk.TkBool }              
-    type                                { buildToken Tk.TkType }
     lazy                                { buildToken Tk.TkLazy }
                                          
     -- Constants                        

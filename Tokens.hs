@@ -31,7 +31,6 @@ data Token
     -- | Reserved words
     = TkInt 
     | TkBool 
-    | TkType
     | TkLazy
 
     -- | Constants
