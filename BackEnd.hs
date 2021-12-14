@@ -1,12 +1,15 @@
 module BackEnd
 ( UserState(..)
 , GlobalState (..)
+, resetSymT
 , insertDictionaryST
 , insertSymbolST
-, symbolDefinedST  
-, getSymbolContextST 
+, symbolDefinedST
+, getSymbolContentST
+, getSymbolContextST
 , getSymbolTypeST
 , numberedLines
+, removeCancelledActions
 , baseUserState
 , lexer
 , parse
@@ -49,6 +52,12 @@ data UserState = UState
 type GlobalState a = StateT UserState IO a
 
 
+resetSymT :: GlobalState () 
+resetSymT = do 
+    ustate <- get
+
+    put $ ustate {symT = ST.initialST }
+
 -- | Statefull insertion of a symbol into GlobalState symT 
 insertSymbolST :: String -> ST.SymbolContext -> GlobalState ()
 insertSymbolST id context = do
@@ -56,7 +65,7 @@ insertSymbolST id context = do
 
     let newST = ST.insertSymbolInfo id context (symT ustate)
 
-    put ustate { symT = newST } 
+    put ustate { symT = newST }
 
 -- | Statefull query of a symbol into GlobalState symT
 symbolDefinedST :: String -> GlobalState Bool
@@ -64,7 +73,7 @@ symbolDefinedST id = fmap isJust (getSymbolContextST id)
 
 -- | Statefull query of symbol context.
 getSymbolContextST :: String -> GlobalState (Maybe ST.SymbolContext)
-getSymbolContextST id = do 
+getSymbolContextST id = do
     ustate <- get
 
     let context = ST.getSymbolContext id (symT ustate)
@@ -73,21 +82,24 @@ getSymbolContextST id = do
 
 -- | Statefull query of symbol type.
 getSymbolTypeST :: String -> GlobalState (Either String (Maybe A.Type))
-getSymbolTypeST id = do  
+getSymbolTypeST id = do
     ustate <- get
 
-    return $ ST.getSymbolType id (symT ustate) 
+    return $ ST.getSymbolType id (symT ustate)
 
--- | Statefull query of symbol content.
-getSymbolContentST :: String -> GlobalState (Maybe ST.Result)
-getSymbolContentST id = do  
+{- | Statefull query of symbol content. It is assumed that the symbol content
+ - is either always present or the symbol not exists. This is possible due to static type validation,
+ - preventing symbols without a type to go through
+ -}
+getSymbolContentST :: String -> GlobalState ST.Result
+getSymbolContentST id = do
     ustate <- get
 
-    case ST.getSymbolContent id (symT ustate) of 
-        Left errorMsg -> do 
+    case ST.getSymbolContent id (symT ustate) of
+        Left errorMsg -> do
             -- insertError errorMsg ###
             lift $ putStrLn errorMsg
-            return Nothing
+            return ST.ERROR
         Right tp -> return tp
 
 {- Functions for error dictionary -}
@@ -98,8 +110,8 @@ insertDictionary word meaning = M.insertWith (\a b-> b ++ a) word [meaning]
 
 -- | Statefull insertion on error dictionary
 insertDictionaryST :: Filename -> ErrorContext -> GlobalState ()
-insertDictionaryST file errorContext = do 
-    ustate <- get 
+insertDictionaryST file errorContext = do
+    ustate <- get
 
     let newDict = insertDictionary file errorContext (errorDictionary ustate)
 
@@ -124,6 +136,11 @@ numberedLines = numberLines 1
                 (preNewLine,postNewLine) = span (/='\n') xs
                 next = numberLines (n+1) (tail postNewLine)
 
+-- | Function necessary to interpretate actions that were successfully type validated.
+removeCancelledActions :: A.Program -> [Bool] -> A.Program
+removeCancelledActions elem@A.Ins{} xs = elem{ A.list = map snd . filter fst . zip xs $ A.list elem }
+removeCancelledActions el _ = el
+
 {- Relevant Virtual Machine functions -}
 
 -- | This function is a renaming of the alexScanTokens function that performs tokenization.
@@ -137,7 +154,6 @@ parse :: [Tk.ContextToken] -> Either String A.Program
 parse tks = case P.parse tks of
     Err.Ok result  -> Right result
     Err.Failed err -> Left err
-
 
 {- Constants -}
 

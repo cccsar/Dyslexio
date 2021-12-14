@@ -20,12 +20,21 @@ where
  -}
 
 import qualified Data.Map as M
-import qualified AST as A (Type, Expr) 
+import Data.Maybe (fromJust)
+
+import qualified AST as A (Type, Expr, ConcreteType) 
 
 data Result 
+    -- Typed results
     = BOOL Bool
     | INT Int
-    | LAZY A.Expr -- tentative
+    | LAZY A.Expr 
+    -- Reflexive type results
+    | REFXTYPE A.ConcreteType
+    | LTYPE A.Type
+    -- void result for functions
+    | VOID 
+    -- error
     | ERROR 
 
 
@@ -34,6 +43,8 @@ instance Show Result where
     show (BOOL False)   = "false"
     show (INT a)     = show a
     show (LAZY expr) = show expr
+    show (REFXTYPE tp) = show tp 
+    show (LTYPE tp) = show tp
     show ERROR = "" 
 
 data SymbolContext = Context { 
@@ -63,10 +74,10 @@ getSymbolType id symT = case getSymbolContext id symT of
     Nothing      -> Left $ "Symbol '" ++ id ++ "' not in environment."
     Just context -> Right (symbolType context)
 
-getSymbolContent :: String -> SymTable -> Either String (Maybe Result)
+getSymbolContent :: String -> SymTable -> Either String Result
 getSymbolContent id symT = case getSymbolContext id symT of
     Nothing      -> Left $ "Symbol '" ++ id ++ "' not in environment."
-    Just context -> Right (symbolContent context)
+    Just context -> Right $ fromJust $ symbolContent context
 
 reset :: SymTable
 reset = initialST

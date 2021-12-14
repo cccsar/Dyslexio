@@ -17,12 +17,15 @@ import SymTable as ST
 import AST 
 import qualified BackEnd as BE  
 
+-- | Validating a program handles either proper type verification for an action : the actions happens or not, 
+-- and type validation for an expression, it has a well defined type, or not.
 validateProgram :: Program -> BE.GlobalState (Either [Bool] (Maybe Type))
 validateProgram elem@Ins{} = do 
     resultList <- mapM validateInstruction (list elem) 
     return $ Left resultList
 validateProgram elem@Ex{}  = Right <$> validateExpr (expr elem) 
 
+-- | Instructions type validation.
 validateInstruction :: Instruction -> BE.GlobalState Bool
 validateInstruction elem@Inicialization{} = do 
 
@@ -48,10 +51,10 @@ validateInstruction elem@Inicialization{} = do
                     reportTypeError errorMsg
                     -- insertError errorMsg ###
                     return False
-                Just tp -> if (initType elem) `relaxedTypeEquality` tp  then do
+                Just tp -> if initType elem `relaxedTypeEquality` tp  then do
      
                         let newSymbolContext = ST.Context { 
-                            ST.symbolType = expressionType,
+                            ST.symbolType    = Just (initType elem),
                             ST.symbolContent = Nothing
                         }
      
@@ -62,14 +65,13 @@ validateInstruction elem@Inicialization{} = do
                     else do 
                         let errorMsg = "Invalid inicialization types. Related to inicialization at column " 
                                         ++ show (getPosition elem) ++ ". Found types " 
-                                        ++ show (initType elem) ++ " and " ++ show expressionType 
+                                        ++ show (initType elem) ++ " and " ++ show tp 
                                         ++ " , but expected equal types."
      
                         
                         reportTypeError errorMsg
                         -- insertError errorMsg ###
                         return False
-
 validateInstruction elem@Assignment{} = do
     check <- BE.symbolDefinedST (initId elem)     
 
@@ -117,13 +119,13 @@ validateInstruction elem@Assignment{} = do
 
     else do
         let errorMsg = "Invalid assignment. Related to assignment at column " ++ show (getPosition elem) 
-                       ++ ". Symbol '" ++ (assignId elem) ++ "' has not been defined. Ignoring type validation."
+                       ++ ". Symbol '" ++ assignId elem ++ "' has not been defined. Ignoring type validation."
 
         reportTypeError errorMsg
         -- insertError errorMsg  ###
         return False
 
-
+-- Expression type vaidation
 validateExpr :: Expr -> BE.GlobalState (Maybe Type)
 validateExpr elem@Identifier {} = do 
     result <- BE.getSymbolTypeST (idName elem) 
@@ -173,7 +175,13 @@ validateExpr elem@Function {} = do
                         _                              -> return Nothing
                 _ -> reportInvalidNArgs 3 (functionPos elem) "if"
             "type"    -> case functionArguments elem of 
-                [expr] -> return Nothing -- ### Decision made since type is a function for reflexivity
+                [expr] -> do 
+                    result <- validateExpr expr
+
+                    case result of
+                        Nothing -> return Nothing
+                        Just Lazy {tp=someType} -> return $ Just $ Concrete {tp=someType}
+                        Just something          -> return $ Just something
                 _ -> reportInvalidNArgs 1 (functionPos elem) "type" 
 
             "ltype"   -> case functionArguments elem of
@@ -204,7 +212,11 @@ validateExpr elem@Function {} = do
                         return Nothing
 
 
-                _ -> reportInvalidNArgs 1 (functionPos elem) "ltype"
+                _ -> do
+                    let errorMsg = "Invalid Arguments. 'ltype' functions requires a single existing variable name."
+                                    ++ "Related to function at column " ++ show (functionPos elem) 
+                    reportTypeError errorMsg
+                    return Nothing
 
             "cvalue"  -> case functionArguments elem of 
                 [idElem@Identifier{}] -> do 
@@ -452,17 +464,20 @@ lhs `relaxedTypeEquality` rhs = case lhs of
 
 {- Error report Helpers -}
 
+-- | Generic type error report.
 reportTypeError :: String -> BE.GlobalState() 
 reportTypeError msg = lift $ hPutStrLn stderr (tpPrefix ++ msg)
     where tpPrefix = "--> TypeError: "
 
+-- | Report for invalid number of arguments of a predefined function.
 reportInvalidNArgs :: Int -> Int -> String -> BE.GlobalState (Maybe Type)
 reportInvalidNArgs nArgs errorPos foo = do 
-    let errorMsg = "Invalid number of arguments. '" ++ foo ++ "' requires nArgs. Related to function"
+    let errorMsg = "Invalid number of arguments. '" ++ foo ++ "' requires "++ show nArgs ++" arguments. Related to function"
                     ++ " at column " ++ show errorPos
     reportTypeError errorMsg
     return Nothing
 
+-- | Report of invalid type of arguments of a predefined function.
 reportInvalidFunctionArgs :: Int -> String -> [Type] -> [Type] -> BE.GlobalState (Maybe Type) 
 reportInvalidFunctionArgs errorPos foo expectedTypes actualTypes = do 
     let errorMsg = "Invalid types for function. '" ++ foo ++ "' expects types " ++ intercalate ", " (map show expectedTypes) 
@@ -472,6 +487,7 @@ reportInvalidFunctionArgs errorPos foo expectedTypes actualTypes = do
     reportTypeError errorMsg
     return Nothing
 
+-- | Report of invalid arguments for an operator.
 reportInvalidOpTypes :: Int -> String -> [Type] -> [Type] -> BE.GlobalState (Maybe Type)
 reportInvalidOpTypes errorPos op expectedTypes actualTypes = do 
     let errorMsg = "Invalid types for '" ++ op ++ "'. Expected " ++ intercalate ", " (map show expectedTypes) 

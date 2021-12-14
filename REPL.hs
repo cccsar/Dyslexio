@@ -19,12 +19,13 @@ import System.IO (hFlush, stdout)
 
 import qualified Data.Map as M
 
+import qualified AST as A
 import qualified BackEnd as BE
 import qualified Error as Err (TokenError)
-import qualified Tokens as Tk (ContextToken)
-import qualified TypeVer as Tv 
-import qualified SymTable as ST
 import qualified Interpreter as I
+import qualified Tokens as Tk (ContextToken)
+import qualified SymTable as ST
+import qualified TypeVer as Tv
 
 
 -- | Prompt display and user inputut.
@@ -185,25 +186,28 @@ validate tks = do
     let parseResult = BE.parse tks
 
     case parseResult of
-        Right result    -> do 
-            typeverResult <- Tv.validateProgram result
+        Right resultAst    -> do 
+
+            typeverResult <- Tv.validateProgram resultAst
 
             case typeverResult of 
                 
-                Left xs -> do
-                    if all (==True) xs then lift $ putStrLn "OK: All actions properly performed."
-                        else lift $ putStrLn "Error: Some actions weren't performed."
+                -- Here are the actions ### Enhance the semantics and pipeline for this.
+                Left listOfAcceptation -> do
+                    mapM_ I.execute (A.list (BE.removeCancelledActions resultAst listOfAcceptation)) -- ###
 
-                Right (Just tp) -> do
-                    lift $ putStrLn $ "Expression type is: "++ show tp 
+                    if and listOfAcceptation then lift $ putStrLn $ "Ok: All actions performed."
+                        else lift $ putStrLn $ "Warning: Some actions weren't performed"
 
-                    evalResult <- I.evalProgram result
+                -- Here are the expressions ### Enhance the semantics and pipeline for this.
+                Right (Just _) -> do
+                    resultEval <- I.eval (A.expr resultAst) -- ### 
 
-                    case evalResult of 
-                        Right ST.ERROR -> return () 
-                        _     -> lift $ putStrLn $ "OK: Result is: " ++ show evalResult
+                    case resultEval of 
+                        ST.ERROR -> return () 
+                        _        -> lift $ putStrLn $ "OK: Result for expression is ==> " ++ show resultEval 
                     
-                Right _         -> lift $ putStrLn "Error: Type Error"
+                Right _         -> return () 
 
         Left parseError -> lift $ putStrLn parseError
 

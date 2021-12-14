@@ -1,7 +1,6 @@
 module Interpreter 
-( evalProgram
-, evalInstruction
-, evalExpr
+( execute
+, eval
 )where
 
 {-
@@ -9,56 +8,149 @@ module Interpreter
  -}
 
 import System.IO  (hPutStrLn, stderr)
-import Control.Monad.State (lift)
+import Control.Monad.State (lift, get)
+import Data.Maybe (fromJust)
+import System.Random 
+import Data.Time.Clock.POSIX (getPOSIXTime)
 
 import BackEnd
 import AST
 import SymTable
+import TypeVer as TV
 
-evalProgram :: Program -> GlobalState (Either () Result)
-evalProgram elem@Ins{} = undefined
-evalProgram elem@Ex{} = Right <$>  evalExpr (expr elem) 
 
-evalInstruction :: Instruction -> GlobalState ()
-evalInstruction Inicialization{} = undefined
-evalInstruction Assignment{} = undefined
+-- | Execution of actions.
+execute :: Instruction -> GlobalState ()
+execute elem@Inicialization{} = do 
+    ustate <- get
+    
+    context <- getSymbolContextST (initId elem) 
+    result  <- eval (initExpr elem)
+
+    let extractedContext = fromJust context -- ### Typever pass guarantees that a context would be returned
+        newContext = extractedContext { symbolContent = Just result }
+
+    insertSymbolST (initId elem) newContext
+execute elem@Assignment{} = do 
+    ustate <- get
+
+    context <- getSymbolContextST (assignId elem) 
+    result  <- eval (assignExpr elem)
+
+    let extractedContext = fromJust context -- ### Typever pass guarantees that a context would be returned
+        newContext = extractedContext { symbolContent = Just result }
+
+    insertSymbolST (initId elem) newContext
 
 -- | Expression evaluation implementaiton.
-evalExpr :: Expr -> GlobalState Result
+eval :: Expr -> GlobalState Result
 -- Leafs == Non terminals
-evalExpr elem@IntExp {}  = return $ INT (intVal elem)
-evalExpr elem@BoolExp {} = return $ BOOL (boolVal elem)
-evalExpr elem@LazyExp {} = return $ LAZY (lazyVal elem)
+eval elem@IntExp {}  = return $ INT (intVal elem)
+eval elem@BoolExp {} = return $ BOOL (boolVal elem)
+eval elem@LazyExp {} = return $ LAZY (lazyVal elem)
 -- Arithmetical expressions
-evalExpr elem@Add {}   = applyBinOpST "+" (lhs elem) (rhs elem)
-evalExpr elem@Sub {}   = applyBinOpST "-" (lhs elem) (rhs elem)
-evalExpr elem@Minus {} = applyUnOpST "-" (minusVal elem)
-evalExpr elem@Mas {}   = applyUnOpST "+" (masVal elem)
-evalExpr elem@Mult {}  = applyBinOpST "*" (lhs elem) (rhs elem) 
-evalExpr elem@Mod {}   = applyBinOpST "%" (lhs elem) (rhs elem)
-evalExpr elem@Power {} = applyBinOpST "^" (lhs elem) (rhs elem)
+eval elem@Add {}   = applyBinOpST "+" (lhs elem) (rhs elem)
+eval elem@Sub {}   = applyBinOpST "-" (lhs elem) (rhs elem)
+eval elem@Minus {} = applyUnOpST "-" (minusVal elem)
+eval elem@Mas {}   = applyUnOpST "+" (masVal elem)
+eval elem@Mult {}  = applyBinOpST "*" (lhs elem) (rhs elem) 
+eval elem@Mod {}   = applyBinOpST "%" (lhs elem) (rhs elem)
+eval elem@Power {} = applyBinOpST "^" (lhs elem) (rhs elem)
 -- Relational expressions
-evalExpr elem@LessThan {}         = applyBinOpST "<" (lhs elem) (rhs elem) 
-evalExpr elem@LessEqualThan {}    = applyBinOpST "<=" (lhs elem) (rhs elem)
-evalExpr elem@GreaterThan {}      = applyBinOpST ">" (lhs elem) (rhs elem)
-evalExpr elem@GreaterEqualThan {} = applyBinOpST ">=" (lhs elem) (rhs elem)
-evalExpr elem@Equal {}            = applyBinOpST "=" (lhs elem) (rhs elem)
-evalExpr elem@NotEqual {}         = applyBinOpST "/=" (lhs elem) (rhs elem)
+eval elem@LessThan {}         = applyBinOpST "<" (lhs elem) (rhs elem) 
+eval elem@LessEqualThan {}    = applyBinOpST "<=" (lhs elem) (rhs elem)
+eval elem@GreaterThan {}      = applyBinOpST ">" (lhs elem) (rhs elem)
+eval elem@GreaterEqualThan {} = applyBinOpST ">=" (lhs elem) (rhs elem)
+eval elem@Equal {}            = applyBinOpST "=" (lhs elem) (rhs elem)
+eval elem@NotEqual {}         = applyBinOpST "/=" (lhs elem) (rhs elem)
 -- Boolean expressions
-evalExpr elem@And {} = applyBinOpST "&&" (lhs elem) (rhs elem)
-evalExpr elem@Or {}  = applyBinOpST "||" (lhs elem) (rhs elem)
-evalExpr elem@Not {} = applyUnOpST "!" (notVal elem)
+eval elem@And {} = applyBinOpST "&&" (lhs elem) (rhs elem)
+eval elem@Or {}  = applyBinOpST "||" (lhs elem) (rhs elem)
+eval elem@Not {} = applyUnOpST "!" (notVal elem)
 -- Miscellaneus
-evalExpr elem@Parentheses {} = evalExpr (parenthVal elem)
-evalExpr elem@Identifier {}  = undefined
+eval elem@Parentheses {} = eval (parenthVal elem)
+eval elem@Identifier {}  = do 
+    result <- getSymbolContentST (idName elem)
 
-evalExpr elem@Function {}    = undefined
+    case result of 
+        ERROR  -> return ERROR
+        result -> return result
+        
+eval elem@Function {}    = case functionName elem of 
+    "if" -> do 
+        
+        let [cond,success,failure] = functionArguments elem
+
+        preCheck <- eval cond 
+
+        let BOOL check = preCheck
+
+        if check then eval success 
+            else eval failure
+    "type" -> do 
+        let [arg] = functionArguments elem
+
+        result <- TV.validateExpr arg 
+
+        let Just content = result
+            actual = tp content
+
+        return $ REFXTYPE actual 
+    "ltype" -> do 
+        let [elemId@Identifier{}] = functionArguments elem
+
+        result <- getSymbolTypeST (idName elemId) 
+
+        let Right (Just actualType) = result
+
+        return $ LTYPE actualType
+
+    "cvalue" -> do 
+        let [elemId@Identifier{}] = functionArguments elem
+
+        getSymbolContentST (idName elemId)
+
+    "reset" -> do 
+        resetSymT 
+        return (BOOL True)
+    "irandom" -> do 
+
+        let [uBound] = functionArguments elem
+
+        result <- eval uBound
+        generator <- lift $ newStdGen 
+
+        let (INT n) = result
+
+        return $ INT $ fst $ randomR (0,n-1) generator
+    "fibo" -> do
+        let [exp] = functionArguments elem
+
+        result <- eval exp
+
+        let (INT n) = result
+
+        fibo n        
+    "gcd" -> do
+        let [expA,expB] = functionArguments elem
+
+        resultA <- eval expA
+        resultB <- eval expB
+
+        let (INT n, INT m) = (resultA, resultB) 
+
+        return $ INT (gcd n m)
+    "now" -> do 
+        unixTime <- lift $ getPOSIXTime
+
+        return $ (INT $ floor $ toRational unixTime)
+    _ -> error "Dyslexio: This shouldn't happen"
 
 -- | FrontEnd to call for the application of a statefull binary operation.
 applyBinOpST :: String -> Expr -> Expr -> GlobalState Result
 applyBinOpST op lse rse = do 
-    lres <- evalExpr lse
-    rres <- evalExpr rse 
+    lres <- eval lse
+    rres <- eval rse 
     
     applyBinOp op lres rres
 
@@ -90,7 +182,7 @@ applyBinOp _ _ _ = error "Dyslexio: This shouldn't happen."
 -- | Application of a known unary operation using a state wrapper.
 applyUnOpST :: String -> Expr -> GlobalState Result
 applyUnOpST op val = do 
-    el <- evalExpr val 
+    el <- eval val 
     return $ applyUnOp op el 
 
 -- | Normal application of a unary operation.
@@ -99,6 +191,7 @@ applyUnOp _ ERROR = ERROR
 applyUnOp op (INT v) = case op of 
     "+" -> INT v
     "-" -> INT (-v) 
+    _   -> error "Dyslexio: This shouldn't happen"
 applyUnOp "!" (BOOL v) = BOOL (not v) 
 applyUnOp _ _ = error "Dyslexio: This shouldn't happen."
 
@@ -116,7 +209,7 @@ myMod m n
 myPow :: Int -> Int -> GlobalState Result
 myPow base exp  
     | exp < 0   = do 
-            let errorMsg = "Execution error: Power requires an integer as the base and a non negative integer as the exponent." 
+            let errorMsg = "Execution error. Power requires an integer as the base and a non negative integer as the exponent." 
             reportExecutionError errorMsg
             return ERROR
 
@@ -127,6 +220,18 @@ myPow base exp
         powTr _ result 1 = result 
         powTr base acc exp = powTr base (acc*base) (exp-1)
 
+fibo :: Int -> GlobalState Result
+fibo n
+    | n < 0 = do 
+        let errorMsg = "Execution error. Fibonacci requires a possitive integer as argument."
+        reportExecutionError errorMsg
+        return ERROR
+    | otherwise = return $ INT (myFibo n) 
+    where
+        myFibo :: Int -> Int
+        myFibo 0 = 0
+        myFibo 1 = 1 
+        myFibo n = myFibo (n-1) + myFibo (n-2)
 
 {- Constants -}
 
