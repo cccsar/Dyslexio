@@ -397,7 +397,7 @@ validateExpr elem@Or{} = do
 
     validateBoolean 2 (getPosition elem) "||" [lse,rse]
 validateExpr elem@Not{} = do 
-    expr <- validateExpr $ lhs elem
+    expr <- validateExpr $ notVal elem
 
     validateBoolean 1 (getPosition elem) "!" [expr]
 validateExpr elem@Parentheses{} = validateExpr (parenthVal elem)

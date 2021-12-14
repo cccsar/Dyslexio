@@ -23,6 +23,7 @@ evalInstruction :: Instruction -> GlobalState ()
 evalInstruction Inicialization{} = undefined
 evalInstruction Assignment{} = undefined
 
+-- | Expression evaluation implementaiton.
 evalExpr :: Expr -> GlobalState Result
 -- Leafs == Non terminals
 evalExpr elem@IntExp {}  = return $ INT (intVal elem)
@@ -76,11 +77,13 @@ applyBinOp op (INT l) (INT r)  = case op of
     "<=" -> return $ BOOL (l <= r)
     "="  -> return $ BOOL (l == r)
     "/=" -> return $ BOOL (l /= r)
+    _    -> error "Dyslexio: This shouldn't happen."
 applyBinOp op (BOOL l) (BOOL r)  = case op of 
     "&&" -> return $ BOOL (l && r )
-    "!!" -> return $ BOOL (l || r)
+    "||" -> return $ BOOL (l || r)
     "="  -> return $ BOOL (l == r) 
     "/=" -> return $ BOOL (l /= r)
+    _    -> error "Dyslexio: This shouldn't happen."
 applyBinOp _ _ _ = error "Dyslexio: This shouldn't happen."
 
 -- | Application of a known unary operation using a state wrapper.
