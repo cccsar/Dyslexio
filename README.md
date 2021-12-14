@@ -4,7 +4,7 @@ Interpreter for the LIPS programming language for the subject CI-3725 : Translat
 
 ## Required installations
 
-This project compiles with ```ghc version 8.6.5``` , ```mtl 2.2.2```, ```System.Random```,  ```alex version 3.2.4```and ```happy 1.19.12``` and is intended for Unix Systems only.
+This project compiles with ```ghc version 8.6.5``` , ```mtl 2.2.2```, ```System.Random```,  ```alex version 3.2.4```and ```happy 1.19.12``` and is intended for Unix Systems and Windows systems only.
 
 The dependencies listed before must be installed before using Dislexio.
 
@@ -26,6 +26,8 @@ Lastly you must install [mtl](https://hackage.haskell.org/package/mtl) and [Syst
 > cabal install --lib random
 > 
 > cabal install --lib mtl
+
+Note that the previous instructions were tested on Windows, for UNIX systems you may need to replace ```cabal install package``` for ```cabal v2-install package``` and ```cabal install --lib package``` for ```cabal v2-install --lib package --package-env .```
 
 ### Other methods:
 
