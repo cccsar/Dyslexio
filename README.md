@@ -27,7 +27,8 @@ Lastly you must install [mtl](https://hackage.haskell.org/package/mtl) and [Syst
 > 
 > cabal install --lib mtl
 
-Note that the previous instructions were tested on Windows, for UNIX systems you may need to replace ```cabal install package``` for ```cabal v2-install package``` and ```cabal install --lib package``` for ```cabal v2-install --lib package --package-env .```
+Note that the previous instructions were tested on Windows.
+For UNIX systems you may need to replace ```cabal install package``` for ```cabal v2-install package``` and ```cabal install --lib package``` for ```cabal v2-install --lib package --package-env .```.
 
 ### Other methods:
 
