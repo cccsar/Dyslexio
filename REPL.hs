@@ -17,7 +17,6 @@ import System.Exit (exitSuccess)
 import System.FilePath (dropFileName)
 import System.IO (hFlush, stdout)
 
-
 import qualified Data.Map as M
 
 import qualified BackEnd as BE
@@ -25,6 +24,7 @@ import qualified Error as Err (TokenError)
 import qualified Tokens as Tk (ContextToken)
 import qualified TypeVer as Tv 
 import qualified SymTable as ST
+import qualified Eval as Ev
 
 
 -- | Prompt display and user inputut.
@@ -189,12 +189,20 @@ validate tks = do
             typeverResult <- Tv.validateProgram result
 
             case typeverResult of 
+                
                 Left xs -> do
-                    if all (==True) xs then 
-                        lift $ putStrLn "OK: All actions properly performed."
-                    else 
-                        lift $ putStrLn "Error: Some actions weren't performed."
-                Right (Just tp) -> lift $ putStrLn $ "Expression type is: "++ show tp 
+                    if all (==True) xs then lift $ putStrLn "OK: All actions properly performed."
+                        else lift $ putStrLn "Error: Some actions weren't performed."
+
+                Right (Just tp) -> do
+                    lift $ putStrLn $ "Expression type is: "++ show tp 
+
+                    evalResult <- Ev.evalProgram result
+
+                    case evalResult of 
+                        Right ST.ERROR -> return () 
+                        _     -> lift $ putStrLn $ "OK: Result is: " ++ show evalResult
+                    
                 Right _         -> lift $ putStrLn "Error: Type Error"
 
         Left parseError -> lift $ putStrLn parseError

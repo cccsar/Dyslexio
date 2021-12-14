@@ -26,11 +26,14 @@ data Result
     = BOOL Bool
     | INT Int
     | LAZY A.Expr -- tentative
+    | ERROR 
+
 
 instance Show Result where
     show (BOOL a)    = show a 
     show (INT a)     = show a
     show (LAZY expr) = show expr
+    show ERROR = "" 
 
 data SymbolContext = Context { 
     symbolType :: Maybe A.Type,
