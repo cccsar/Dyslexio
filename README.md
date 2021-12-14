@@ -29,9 +29,11 @@ Lastly you must install [mtl](https://hackage.haskell.org/package/mtl) and [Syst
 
 ### Other methods:
 
+Download and install the [Haskell Platform](https://www.haskell.org/) following the instrutions on https://www.haskell.org/downloads/.
+
 If you prefer installing the dependecies manually here are the links for every one of them [alex](https://www.haskell.org/alex/), [happy](https://www.haskell.org/happy/), [mtl](https://hackage.haskell.org/package/mtl) and [System.Random](https://hackage.haskell.org/package/random-1.2.1/docs/System-Random.html).
 
-Note that while this document only explains the process of installation using Cabal, you can use other haskell tools like Stack and the process should be similar. You can also manually install 
+If you prefer to use other haskell tools like Stack for installing dependencies, the process should be similar to the Cabal installation; the most important thing to remember is that [mtl](https://hackage.haskell.org/package/mtl) and [System.Random](https://hackage.haskell.org/package/random-1.2.1/docs/System-Random.html) must be exposed so that Dislexio can use them.
 
 ---
 ## Running instructions
@@ -134,4 +136,4 @@ Dislexio's interpreter can evaluate any expression covered in the grammar showed
 * ```irandom(n) ```: Returns a random integer in the range [0,n-1]. The argument n must be or evaluate to an integer bigger than 0, otherwise Dislexio will throw an error.
 * ```fibo(n) ```: Returns the fibonacci number corresponding to n. The argument n must be or evaluate to a non negative integer, otherwise Dislexio will throw an error.
 * ```gcd(<exp>, <exp1>) ```: Returns the greatest common divisor of <exp> and <exp1>. Both <exp> and <exp1> must be or evaluate to an integer, otherwise Dislexio will throw an error.
-* ```now()```: Returns an integer corresponding to the time in milliseconds elapsed from a certain point in time.
+* ```now()```: Returns an integer corresponding to the time in milliseconds elapsed from the Unix epoch (00:00:00 UTC on 1 January 1970).
