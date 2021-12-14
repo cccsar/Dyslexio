@@ -29,7 +29,7 @@ Lastly you must install [mtl](https://hackage.haskell.org/package/mtl) and [Syst
 
 Note that the previous instructions were tested on Windows.
 
-For UNIX systems you may need to replace ```cabal install package``` for ```cabal v2-install package``` and ```cabal install --lib package``` for ```cabal v2-install --lib package --package-env .```.
+For UNIX systems you may need to replace ```cabal install package``` for ```cabal v2-install package``` and ```cabal install --lib package``` for ```cabal v2-install --lib package --package-env .``` while on Dislexio's folder.
 
 ### Other methods:
 
