@@ -1,9 +1,17 @@
 module BackEnd
 ( UserState(..)
+, GlobalState (..)
+, resetSymT
+, insertDictionaryST
+, insertSymbolST
+, symbolDefinedST
+, getSymbolContentST
+, getSymbolContextST
+, getSymbolTypeST
 , numberedLines
-, lexer
-, insertDictionary
+, removeCancelledActions
 , baseUserState
+, lexer
 , parse
 )
 where
@@ -13,7 +21,9 @@ where
  -}
 
 import Data.Char(isSpace)
+import Data.Maybe (isJust)
 import System.FilePath(FilePath)
+import Control.Monad.State
 
 import qualified Data.Map as M
 
@@ -21,6 +31,7 @@ import qualified AST as A
 import qualified Error as Err
 import qualified Lexer as L
 import qualified Parser as P
+import qualified SymTable as ST
 import qualified Tokens as Tk
 
 
@@ -34,17 +45,81 @@ data UserState = UState
     { errorDictionary :: Dictionary Filename ErrorContext,
       nextLine :: Int,
       currentOpenFile :: Maybe Filename,
-      pathName :: FilePath
+      pathName :: FilePath,
+      symT :: ST.SymTable
     }
 
+type GlobalState a = StateT UserState IO a
 
-{- Helper functions -}
+
+resetSymT :: GlobalState () 
+resetSymT = do 
+    ustate <- get
+
+    put $ ustate {symT = ST.initialST }
+
+-- | Statefull insertion of a symbol into GlobalState symT 
+insertSymbolST :: String -> ST.SymbolContext -> GlobalState ()
+insertSymbolST id context = do
+    ustate <- get
+
+    let newST = ST.insertSymbolInfo id context (symT ustate)
+
+    put ustate { symT = newST }
+
+-- | Statefull query of a symbol into GlobalState symT
+symbolDefinedST :: String -> GlobalState Bool
+symbolDefinedST id = fmap isJust (getSymbolContextST id)
+
+-- | Statefull query of symbol context.
+getSymbolContextST :: String -> GlobalState (Maybe ST.SymbolContext)
+getSymbolContextST id = do
+    ustate <- get
+
+    let context = ST.getSymbolContext id (symT ustate)
+
+    return context
+
+-- | Statefull query of symbol type.
+getSymbolTypeST :: String -> GlobalState (Either String (Maybe A.Type))
+getSymbolTypeST id = do
+    ustate <- get
+
+    return $ ST.getSymbolType id (symT ustate)
+
+{- | Statefull query of symbol content. It is assumed that the symbol content
+ - is either always present or the symbol not exists. This is possible due to static type validation,
+ - preventing symbols without a type to go through
+ -}
+getSymbolContentST :: String -> GlobalState ST.Result
+getSymbolContentST id = do
+    ustate <- get
+
+    case ST.getSymbolContent id (symT ustate) of
+        Left errorMsg -> do
+            -- insertError errorMsg ###
+            lift $ putStrLn errorMsg
+            return ST.ERROR
+        Right tp -> return tp
+
+{- Functions for error dictionary -}
 
 -- | Generic function to append list elements in map where "values" are keys.
 insertDictionary :: Ord k => k -> a -> M.Map k [a] -> M.Map k [a]
 insertDictionary word meaning = M.insertWith (\a b-> b ++ a) word [meaning]
 
-{- | Given a string repreNewLinesenting a file, returns an association list between the line 
+-- | Statefull insertion on error dictionary
+insertDictionaryST :: Filename -> ErrorContext -> GlobalState ()
+insertDictionaryST file errorContext = do
+    ustate <- get
+
+    let newDict = insertDictionary file errorContext (errorDictionary ustate)
+
+    put ustate {errorDictionary = newDict}
+
+{- Helper functions -}
+
+{- | Given a string representing a file, returns an association list between the line 
  - number and the line content disregarding empty or only whitespace lines.
  -}
 numberedLines :: String -> [(Int,String)]
@@ -61,6 +136,11 @@ numberedLines = numberLines 1
                 (preNewLine,postNewLine) = span (/='\n') xs
                 next = numberLines (n+1) (tail postNewLine)
 
+-- | Function necessary to interpretate actions that were successfully type validated.
+removeCancelledActions :: A.Program -> [Bool] -> A.Program
+removeCancelledActions elem@A.Ins{} xs = elem{ A.list = map snd . filter fst . zip xs $ A.list elem }
+removeCancelledActions el _ = el
+
 {- Relevant Virtual Machine functions -}
 
 -- | This function is a renaming of the alexScanTokens function that performs tokenization.
@@ -75,7 +155,6 @@ parse tks = case P.parse tks of
     Err.Ok result  -> Right result
     Err.Failed err -> Left err
 
-
 {- Constants -}
 
 baseUserState :: UserState
@@ -84,4 +163,6 @@ baseUserState = UState
                     , nextLine = 1
                     , currentOpenFile = Nothing
                     , pathName = ""
+                    , symT = ST.initialST
                     }
+

@@ -2,10 +2,12 @@ module Main where
 
 import REPL
 import BackEnd (baseUserState)
+import Control.Monad.State (runStateT)
 
 -- | Program entry point.
 main :: IO ()
 main = do
     initializeDisplay
     putStrLn "Welcome to Dyslexio! a good option to interpretate LIPS programming language"
-    loop baseUserState
+
+    fmap fst $ runStateT loop baseUserState

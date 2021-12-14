@@ -1,6 +1,5 @@
 module Tokens 
-( Position(..)
-, Content(..)
+( Content(..)
 , ContextToken(..)
 , Token (..)
 ) where
@@ -8,11 +7,6 @@ module Tokens
 {-
  -  Module concerning token data definitions and their instances. 
  -}
-
-newtype Position = Pos (Int,Int) 
-
-instance Show Position where
-    show (Pos (_,column)) = "column: " ++ show column
 
 data Content = Integer Int | Id String 
 
@@ -22,7 +16,7 @@ instance Show Content where
 
 -- | Datatype for generalizing token components.
 data ContextToken = CtxToken
-    { position :: Position            -- ^ Position of token in the input stream.
+    { position :: Int                 -- ^ Position of token in the input stream (a column).
     , string :: String                -- ^ String tokenized.
     , stringContent :: Maybe Content  -- ^ Content for tokens carrying info.
     , tk :: Token                     -- ^ Token
@@ -37,7 +31,6 @@ data Token
     -- | Reserved words
     = TkInt 
     | TkBool 
-    | TkType
     | TkLazy
 
     -- | Constants
@@ -82,5 +75,4 @@ data Token
     | TkColon
     | TkColonColon
     | TkWhile
-    | TkIf
     deriving Show

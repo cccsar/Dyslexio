@@ -16,7 +16,6 @@ tokens :-
     -- Reserved words                      
     int                                 { buildToken Tk.TkInt }   
     bool                                { buildToken Tk.TkBool }              
-    type                                { buildToken Tk.TkType }
     lazy                                { buildToken Tk.TkLazy }
                                          
     -- Constants                        
@@ -58,7 +57,6 @@ tokens :-
     \:                                  { buildToken Tk.TkColon }
     \::                                 { buildToken Tk.TkColonColon }
     while                               { buildToken Tk.TkWhile }
-    if                                  { buildToken Tk.TkIf }
 
     -- Ids                               
     ([$alpha\_]){1,}[$alpha\_$digit]*   { buildToken Tk.TkId  }
@@ -72,10 +70,10 @@ type LexerContent = Either Err.TokenError Tk.ContextToken
 -- Given a Token, it's context information and the related string
 -- Creates the proper tokenized ouput.
 buildToken :: Tk.Token -> AlexPosn -> String -> LexerContent 
-buildToken espTk (AlexPn _ r c) str = Right tk
+buildToken espTk (AlexPn _ _ c) str = Right tk
     where 
         tk = Tk.CtxToken {
-            Tk.position      = Tk.Pos (r,c),
+            Tk.position      = c,
             Tk.string        = str,
             Tk.stringContent = chooseContent espTk str,
             Tk.tk            = espTk 
@@ -90,11 +88,11 @@ chooseContent token string = case token of
     
 -- Handles creation of invalid input.
 buildError :: AlexPosn -> String -> LexerContent 
-buildError (AlexPn _ r c) str = Left err 
+buildError (AlexPn _ _ c) str = Left err 
     where
         err = Err.TkErr { 
             Err.name = str,
-            Err.pos = Tk.Pos (r,c)
+            Err.pos = c
         }
 
 }

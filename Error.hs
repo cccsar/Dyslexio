@@ -8,17 +8,16 @@ module Error
  - Module concerning error types.
  -}
 
-import qualified Tokens as Tk (Position(..))
 
 data TokenError = TkErr 
     { name :: String      -- ^ String in error.
-    , pos :: Tk.Position  -- ^ Position of the error.
+    , pos :: Int          -- ^ Position of the error (a column)
     } 
 
 instance Show TokenError where
     show err = show (name err) ++ " at " ++ show (pos err)
 
-{- Type for error representation -}
+{- Type for parse error representation -}
 
 data ErrorMonad a = Ok a | Failed String
 
