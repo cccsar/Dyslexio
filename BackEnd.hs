@@ -90,18 +90,6 @@ getSymbolContentST id = do
             return Nothing
         Right tp -> return tp
 
--- | Insertion of error into state ??
-{-
-insertError :: String -> GlobalState ()
-insertError errMsg = do
-    ustate <- get
-
-    let newErrors = errMsg : errors ustate
-
-
-    put ustate { errors = newErrors }
--}
-
 {- Functions for error dictionary -}
 
 -- | Generic function to append list elements in map where "values" are keys.

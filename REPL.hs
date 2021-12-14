@@ -24,7 +24,7 @@ import qualified Error as Err (TokenError)
 import qualified Tokens as Tk (ContextToken)
 import qualified TypeVer as Tv 
 import qualified SymTable as ST
-import qualified Eval as Ev
+import qualified Interpreter as I
 
 
 -- | Prompt display and user inputut.
@@ -197,7 +197,7 @@ validate tks = do
                 Right (Just tp) -> do
                     lift $ putStrLn $ "Expression type is: "++ show tp 
 
-                    evalResult <- Ev.evalProgram result
+                    evalResult <- I.evalProgram result
 
                     case evalResult of 
                         Right ST.ERROR -> return () 

@@ -30,8 +30,8 @@ data Result
 
 
 instance Show Result where
-    show (BOOL true)    = "true"
-    show (BOOL false)   = "false"
+    show (BOOL True)    = "true"
+    show (BOOL False)   = "false"
     show (INT a)     = show a
     show (LAZY expr) = show expr
     show ERROR = "" 
