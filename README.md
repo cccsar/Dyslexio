@@ -4,7 +4,7 @@ Interpreter for the LIPS programming language for the subject CI-3725 : Translat
 
 ## Required installations
 
-This project compiles with ```ghc version 8.6.5``` , ```mtl 2.2.2```, ```System.Random```,  ```alex version 3.2.4```and ```happy 1.19.12``` and is intended for Unix Systems and Windows systems only.
+This project compiles with ```ghc version 8.6.5``` , ```mtl 2.2.2```, ```System.Random```,  ```alex version 3.2.4```and ```happy 1.19.12``` and is intended for Unix and Windows systems only.
 
 The dependencies listed before must be installed before using Dislexio.
 
