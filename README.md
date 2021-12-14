@@ -4,17 +4,36 @@ Interpreter for the LIPS programming language for the subject CI-3725 : Translat
 
 ## Required installations
 
-This project compiles with ```ghc version 8.6.5``` , ```alex version 3.2.4``` and ```happy 1.19.12``` and is intended for Unix Systems only.
+This project compiles with ```ghc version 8.6.5``` , ```mtl 2.2.2```, ```System.Random```,  ```alex version 3.2.4```and ```happy 1.19.12``` and is intended for Unix Systems only.
 
 The dependencies listed before must be installed before using Dislexio.
 
-These are the links with installations instructions for [Haskell Platform](https://www.haskell.org/downloads/), [alex](https://www.haskell.org/alex/) tool and [happy](https://www.haskell.org/happy/).
+### Installation using Cabal (recommended):
 
-Alternatively after installing the [Haskell Platform](https://www.haskell.org/downloads/) you can install [alex](https://www.haskell.org/alex/) and [happy](https://www.haskell.org/happy/) using Cabal with these commands:
+Download and install the [Haskell Platform](https://www.haskell.org/) following the instrutions on https://www.haskell.org/downloads/. 
+
+The [Haskell Platform](https://www.haskell.org/) includes [Cabal](https://www.haskell.org/cabal/). Before using Cabal you should always refresh the package index using:
+> cabal update
+
+After installing the [Haskell Platform](https://www.haskell.org/) and updating Cabal; install [alex](https://www.haskell.org/alex/) and [happy](https://www.haskell.org/happy/) using Cabal with these commands :
+
 > cabal install alex
-
+> 
 > cabal install happy
 
+Lastly you must install [mtl](https://hackage.haskell.org/package/mtl) and [System.Random](https://hackage.haskell.org/package/random-1.2.1/docs/System-Random.html) as libraries(IMPORTANT!). To to this with Cabal use these commands:
+
+> cabal install --lib random
+> 
+> cabal install --lib mtl
+
+### Other methods:
+
+If you prefer installing the dependecies manually here are the links for every one of them [alex](https://www.haskell.org/alex/), [happy](https://www.haskell.org/happy/), [mtl](https://hackage.haskell.org/package/mtl) and [System.Random](https://hackage.haskell.org/package/random-1.2.1/docs/System-Random.html).
+
+Note that while this document only explains the process of installation using Cabal, you can use other haskell tools like Stack and the process should be similar. You can also manually install 
+
+---
 ## Running instructions
 
 You can compile and execute Dislexio REPL using this command:
