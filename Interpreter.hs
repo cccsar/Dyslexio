@@ -4,7 +4,13 @@ module Interpreter
 )where
 
 {-
- - Module for everything concerning evaluation
+ - Module for everything concerning evaluation of expressions and special functions
+ -
+ - Only runtime errors are addressed here since it is assumed that a program that arrives here passed
+ - all it's typechecks. Nevertheless, exit conditions for Dyslexio with context information are placed
+ - to detect those unexpected errors.
+ - 
+ - Most special functions are given the implementations of their equivalents in Haskell.
  -}
 
 import System.IO  (hPutStrLn, stderr)
@@ -253,11 +259,14 @@ unexpectedErrorPrefix = "Dyslexio: This Shoulnd't happen. "
 
 {- Error report helpers -}
 
+-- | Report of a runtime error.
 reportExecutionError :: String -> GlobalState () 
 reportExecutionError errorMsg = lift $ hPutStrLn stderr (execErrorPrefix ++ errorMsg)
 
+-- | Exit message for Dyslexio execution with context information of where it occured.
 unexpectedCondition :: String -> a 
 unexpectedCondition context = error $ unexpectedErrorPrefix  ++ context
 
+-- | Exit message for Dyslexio execution related to a function unexpected condition.
 unexpectedFunctionError :: String -> a
 unexpectedFunctionError foo = error $ unexpectedErrorPrefix ++ " Typever guarantees bindings for " ++ foo

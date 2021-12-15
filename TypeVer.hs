@@ -6,6 +6,12 @@ module TypeVer
 
 {-
  - Module for propper type validation
+ - 
+ - Type comparison is defined with the behaviour of structural type equality as defined in the 
+ - Eq instance for 'Type' in AST.
+ - 
+ - There is a relaxed type equality in assignment of lazy expressions since a promise of a int  (for example)
+ - can also be an int.
  -}
 
 import Control.Monad.State
@@ -36,7 +42,6 @@ validateInstruction imp@Inicialization{} = do
                        ++ show (getPosition imp) ++ ". Ignoring type validation."
 
         reportTypeError errorMsg
-        -- insertError errorMsg ###
         return False
 
         else do
@@ -49,7 +54,6 @@ validateInstruction imp@Inicialization{} = do
                                    ++ show  (initType imp) ++ " and a type error for the expression. "
                     
                     reportTypeError errorMsg
-                    -- insertError errorMsg ###
                     return False
                 Just aType -> if initType imp `relaxedTypeEquality` aType  then do
      
@@ -70,7 +74,6 @@ validateInstruction imp@Inicialization{} = do
      
                         
                         reportTypeError errorMsg
-                        -- insertError errorMsg ###
                         return False
 validateInstruction imp@Assignment{} = do
     check <- BE.symbolDefinedST (assignId imp)     
@@ -82,7 +85,6 @@ validateInstruction imp@Assignment{} = do
             Left errorMsg -> do 
 
                 reportTypeError errorMsg
-                -- insertError errorMsg ###
                 return False
 
             Right Nothing -> do 
@@ -104,7 +106,6 @@ validateInstruction imp@Assignment{} = do
                                        ++ show aSymbolType ++ " and a type error for the assignment expression. "
                         
                         reportTypeError errorMsg
-                        -- insertError errorMsg ###
                         return False
                     Just expressionType -> 
                         if aSymbolType `relaxedTypeEquality` expressionType then return True 
@@ -114,7 +115,6 @@ validateInstruction imp@Assignment{} = do
                                            ++ assignId imp ++ "' has not been defined."
 
                             reportTypeError errorMsg
-                            -- insertError errorMsg  ###
                             return False
 
     else do
@@ -122,10 +122,9 @@ validateInstruction imp@Assignment{} = do
                        ++ ". Symbol '" ++ assignId imp ++ "' has not been defined. Ignoring type validation."
 
         reportTypeError errorMsg
-        -- insertError errorMsg  ###
         return False
 
--- Expression type vaidation
+-- | Expression type validation.
 validateExpr :: Expr -> BE.GlobalState (Maybe Type)
 validateExpr imp@Identifier {} = do 
     result <- BE.getSymbolTypeST (idName imp) 
@@ -377,7 +376,7 @@ validateExpr imp@Equal{} = do
     rse <- validateExpr $ rhs imp
 
     if isJust lse && isJust rse then do
-        if (lse == rse) then return lse
+        if lse == rse then return lse
         else do 
             let errorMsg = "Invalid types. Equality expects impents of equal type, but types differ."
                            ++ "At column " ++ show (getPosition imp) ++ "."
@@ -390,7 +389,7 @@ validateExpr imp@NotEqual{} = do
     rse <- validateExpr $ rhs imp
 
     if isJust lse && isJust rse then do
-        if (lse == rse) then return lse
+        if lse == rse then return lse
         else do 
             let errorMsg = "Invalid types. Inequality expects impents of equal type, but types differ."
                            ++ "At column " ++ show (getPosition imp) ++ "."
@@ -414,6 +413,9 @@ validateExpr imp@Not{} = do
     validateBoolean 1 (getPosition imp) "!" [expression]
 validateExpr imp@Parentheses{} = validateExpr (parenthVal imp)
         
+
+{- Type validation helpers -}
+
 -- | Encapsulated type validation for onto operations.
 validateOntoOperator :: Type -> Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type)
 validateOntoOperator _ _ _ _ [] = error "Dyslexio. This shouldn't happen."
@@ -498,6 +500,7 @@ reportInvalidOpTypes errorPos op expectedTypes actualTypes = do
 
 {- Constants -}
 
+-- Used to avoid compiler warnings of some type returned.
 dummyReturnInt , dummyReturnBool, dummyReturnLazyInt :: Type 
 dummyReturnInt = Concrete {
     tp=Int{ intTypePos = dummyPosition },
@@ -512,7 +515,6 @@ dummyReturnLazyInt = Lazy {
     tp = Int{ intTypePos = dummyPosition }, 
     lazyTypePos = dummyPosition
 }
-
 
 dummyPosition :: Int
 dummyPosition = (-1)

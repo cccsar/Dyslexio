@@ -178,6 +178,8 @@ onFailLex errors inputLine = do
         _             -> lift $ putStrLn (getErrorString inputLine errors)
             -- Print layout when errors are typed directly.
 
+{- | Performs the logic for parsing and then going through type validation and 
+ - evaluation with the AST -}
 validate :: [Tk.ContextToken] -> BE.GlobalState () 
 validate tks = do
     let parseResult = BE.parse tks
@@ -191,14 +193,14 @@ validate tks = do
                 
                 -- Here are the actions ### Enhance the semantics and pipeline for this.
                 Left listOfAcceptation -> do
-                    mapM_ I.execute (A.list (BE.removeCancelledActions resultAst listOfAcceptation)) -- ###
+                    mapM_ I.execute (A.list (BE.removeCancelledActions resultAst listOfAcceptation)) 
 
                     if and listOfAcceptation then lift $ putStrLn $ "Ok: All actions performed."
                         else lift $ putStrLn $ "Warning: Some actions weren't performed"
 
                 -- Here are the expressions ### Enhance the semantics and pipeline for this.
                 Right (Just _) -> do
-                    resultEval <- I.eval (A.expr resultAst) -- ### 
+                    resultEval <- I.eval (A.expr resultAst) 
 
                     case resultEval of 
                         ST.ERROR -> return () 
