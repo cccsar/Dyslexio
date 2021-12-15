@@ -20,63 +20,63 @@ import qualified BackEnd as BE
 -- | Validating a program handles either proper type verification for an action : the actions happens or not, 
 -- and type validation for an expression, it has a well defined type, or not.
 validateProgram :: Program -> BE.GlobalState (Either [Bool] (Maybe Type))
-validateProgram elem@Ins{} = do 
-    resultList <- mapM validateInstruction (list elem) 
+validateProgram imp@Ins{} = do 
+    resultList <- mapM validateInstruction (list imp) 
     return $ Left resultList
-validateProgram elem@Ex{}  = Right <$> validateExpr (expr elem) 
+validateProgram imp@Ex{}  = Right <$> validateExpr (expr imp) 
 
 -- | Instructions type validation.
 validateInstruction :: Instruction -> BE.GlobalState Bool
-validateInstruction elem@Inicialization{} = do 
+validateInstruction imp@Inicialization{} = do 
 
-    check <- BE.symbolDefinedST (initId elem)     
+    check <- BE.symbolDefinedST (initId imp)     
 
     if check then do 
         let errorMsg = "Symbol for inicialization already defined. Related to inicialization at column " 
-                       ++ show (getPosition elem) ++ ". Ignoring type validation."
+                       ++ show (getPosition imp) ++ ". Ignoring type validation."
 
         reportTypeError errorMsg
         -- insertError errorMsg ###
         return False
 
         else do
-            expressionType <- validateExpr (initExpr elem)
+            expressionType <- validateExpr (initExpr imp)
      
             case expressionType of 
                 Nothing ->  do
                     let errorMsg = "Invalid inicialization types. Related to inicialization at column" 
-                                   ++ show  (getPosition elem) ++ ". Found type " 
-                                   ++ show  (initType elem) ++ " and a type error for the expression. "
+                                   ++ show  (getPosition imp) ++ ". Found type " 
+                                   ++ show  (initType imp) ++ " and a type error for the expression. "
                     
                     reportTypeError errorMsg
                     -- insertError errorMsg ###
                     return False
-                Just tp -> if initType elem `relaxedTypeEquality` tp  then do
+                Just aType -> if initType imp `relaxedTypeEquality` aType  then do
      
                         let newSymbolContext = ST.Context { 
-                            ST.symbolType    = Just (initType elem),
+                            ST.symbolType    = Just (initType imp),
                             ST.symbolContent = Nothing
                         }
      
-                        BE.insertSymbolST (initId elem) newSymbolContext 
+                        BE.insertSymbolST (initId imp) newSymbolContext 
      
                         return True
                     
                     else do 
                         let errorMsg = "Invalid inicialization types. Related to inicialization at column " 
-                                        ++ show (getPosition elem) ++ ". Found types " 
-                                        ++ show (initType elem) ++ " and " ++ show tp 
+                                        ++ show (getPosition imp) ++ ". Found types " 
+                                        ++ show (initType imp) ++ " and " ++ show aType 
                                         ++ " , but expected equal types."
      
                         
                         reportTypeError errorMsg
                         -- insertError errorMsg ###
                         return False
-validateInstruction elem@Assignment{} = do
-    check <- BE.symbolDefinedST (initId elem)     
+validateInstruction imp@Assignment{} = do
+    check <- BE.symbolDefinedST (assignId imp)     
 
     if check then do 
-        result <- BE.getSymbolTypeST (assignId elem)
+        result <- BE.getSymbolTypeST (assignId imp)
 
         case result of 
             Left errorMsg -> do 
@@ -87,39 +87,39 @@ validateInstruction elem@Assignment{} = do
 
             Right Nothing -> do 
 
-                let errorMsg = "A function cannot be assigned. Related to assignment at column " ++ show (getPosition elem) 
+                let errorMsg = "A function cannot be assigned. Related to assignment at column " ++ show (getPosition imp) 
                                ++ "."
                             
                 reportTypeError errorMsg
                 return False 
 
-            Right (Just symbolType) -> do 
+            Right (Just aSymbolType) -> do 
                 
-                resultExpr <- validateExpr (assignExpr elem)
+                resultExpr <- validateExpr (assignExpr imp)
 
                 case resultExpr of 
                     Nothing ->  do
                         let errorMsg = "Invalid assignment types. Related to assignment at column" 
-                                       ++ show  (getPosition elem) ++ ". Found type " 
-                                       ++ show symbolType ++ " and a type error for the assignment expression. "
+                                       ++ show  (getPosition imp) ++ ". Found type " 
+                                       ++ show aSymbolType ++ " and a type error for the assignment expression. "
                         
                         reportTypeError errorMsg
                         -- insertError errorMsg ###
                         return False
                     Just expressionType -> 
-                        if symbolType `relaxedTypeEquality` expressionType then return True 
+                        if aSymbolType `relaxedTypeEquality` expressionType then return True 
                         else do 
                             let errorMsg = "Invalid Assignment. Related to assignment at column" 
-                                           ++ show (getPosition elem) ++ ". Variable '" 
-                                           ++ assignId elem ++ "' has not been defined."
+                                           ++ show (getPosition imp) ++ ". Variable '" 
+                                           ++ assignId imp ++ "' has not been defined."
 
                             reportTypeError errorMsg
                             -- insertError errorMsg  ###
                             return False
 
     else do
-        let errorMsg = "Invalid assignment. Related to assignment at column " ++ show (getPosition elem) 
-                       ++ ". Symbol '" ++ assignId elem ++ "' has not been defined. Ignoring type validation."
+        let errorMsg = "Invalid assignment. Related to assignment at column " ++ show (getPosition imp) 
+                       ++ ". Symbol '" ++ assignId imp ++ "' has not been defined. Ignoring type validation."
 
         reportTypeError errorMsg
         -- insertError errorMsg  ###
@@ -127,26 +127,26 @@ validateInstruction elem@Assignment{} = do
 
 -- Expression type vaidation
 validateExpr :: Expr -> BE.GlobalState (Maybe Type)
-validateExpr elem@Identifier {} = do 
-    result <- BE.getSymbolTypeST (idName elem) 
+validateExpr imp@Identifier {} = do 
+    result <- BE.getSymbolTypeST (idName imp) 
     case result of 
         Left errorMsg            -> do  
             reportTypeError errorMsg
             return Nothing
         Right Nothing            -> do 
             let errorMessage = "Invalid name for an identifier. Identifiers cannot have names already given to "
-                                ++ "predefined functions. Related to identifier at column " ++ show (idPos elem) ++ "."
+                                ++ "predefined functions. Related to identifier at column " ++ show (idPos imp) ++ "."
             reportTypeError errorMessage
             return Nothing
-        Right (Just Lazy{tp=something}) -> return $ Just Concrete{tp=something}
+        Right (Just Lazy{tp=something}) -> return $ Just dummyReturnInt{tp=something}
         Right someType           -> return someType
         
-validateExpr elem@Function {} = do 
-    check <- BE.symbolDefinedST (functionName elem)
+validateExpr imp@Function {} = do 
+    check <- BE.symbolDefinedST (functionName imp)
 
     if check then do 
-        case functionName elem of 
-            "if"      -> case functionArguments elem of 
+        case functionName imp of 
+            "if"      -> case functionArguments imp of 
                 [boolExpr, sucExpr, failExpr] -> do 
                     a <- validateExpr boolExpr
                     b <- validateExpr sucExpr
@@ -155,40 +155,40 @@ validateExpr elem@Function {} = do
                     case (a,b,c) of 
                         (Just typeForCondition, Just typeForSuccess, Just typeForFailure) -> do
 
-                            if typeForCondition == Concrete {tp=Bool{}} then 
+                            if typeForCondition == dummyReturnBool then 
 
                                 if typeForSuccess == typeForFailure then  return (Just typeForSuccess)
                                 else do
                                     let errorMsg =  "Types for if alternative must be equal. Found '" 
                                                     ++ show typeForSuccess ++ "' and " ++ show typeForFailure 
-                                                    ++ ". Related to function at column " ++ show (functionPos elem)
+                                                    ++ ". Related to function at column " ++ show (functionPos imp)
                                     reportTypeError errorMsg
                                     return Nothing
 
                             else do 
                                 let errorMsg = "Expected type for if expression is Bool. Found '" 
                                                 ++ show typeForCondition ++ ". Related to function at column " 
-                                                ++ show (functionPos elem) 
+                                                ++ show (functionPos imp) 
                                 reportTypeError errorMsg
                                 return Nothing
 
                         _                              -> return Nothing
-                _ -> reportInvalidNArgs 3 (functionPos elem) "if"
-            "type"    -> case functionArguments elem of 
-                [expr] -> do 
-                    result <- validateExpr expr
+                _ -> reportInvalidNArgs 3 (functionPos imp) "if"
+            "type"    -> case functionArguments imp of 
+                [expression] -> do 
+                    result <- validateExpr expression
 
                     case result of
                         Nothing -> return Nothing
-                        Just Lazy {tp=someType} -> return $ Just $ Concrete {tp=someType}
+                        Just Lazy {tp=someType} -> return $ Just $ dummyReturnInt{tp=someType}
                         Just something          -> return $ Just something
-                _ -> reportInvalidNArgs 1 (functionPos elem) "type" 
+                _ -> reportInvalidNArgs 1 (functionPos imp) "type" 
 
-            "ltype"   -> case functionArguments elem of
+            "ltype"   -> case functionArguments imp of
                 [idElem@Identifier{}] -> do 
-                    check <- BE.symbolDefinedST (idName idElem) 
+                    checkSym <- BE.symbolDefinedST (idName idElem) 
 
-                    if check then do
+                    if checkSym then do
                         result <- BE.getSymbolTypeST (idName idElem) 
                         case result of 
                             Left errorMsg -> do  
@@ -198,7 +198,7 @@ validateExpr elem@Function {} = do
                                 let errorMessage = "Invalid identifier. '" ++ idName idElem ++ " 'ltype' function "
                                                     ++ " requires an existing variable name to provide it's type "
                                                     ++ " information, but insteand found a predefined function name. "
-                                                    ++ " Related to function at column " ++ show (functionPos elem) ++"."
+                                                    ++ " Related to function at column " ++ show (functionPos imp) ++"."
                                 reportTypeError errorMessage
                                 return Nothing
                             Right justSomeType -> return justSomeType
@@ -206,7 +206,7 @@ validateExpr elem@Function {} = do
                     else do
                         let errorMsg = "Undefined symbol '" ++ idName idElem ++ "'. 'ltype' function requires an "
                                        ++ "existing variable name to provide it's type information . Related to "
-                                       ++ "function at column " ++ show (functionPos elem) ++ "."
+                                       ++ "function at column " ++ show (functionPos imp) ++ "."
 
                         reportTypeError errorMsg
                         return Nothing
@@ -214,15 +214,15 @@ validateExpr elem@Function {} = do
 
                 _ -> do
                     let errorMsg = "Invalid Arguments. 'ltype' functions requires a single existing variable name."
-                                    ++ "Related to function at column " ++ show (functionPos elem) 
+                                    ++ "Related to function at column " ++ show (functionPos imp) 
                     reportTypeError errorMsg
                     return Nothing
 
-            "cvalue"  -> case functionArguments elem of 
+            "cvalue"  -> case functionArguments imp of 
                 [idElem@Identifier{}] -> do 
-                    check <- BE.symbolDefinedST (idName idElem) 
+                    checkSym <- BE.symbolDefinedST (idName idElem) 
 
-                    if check then do
+                    if checkSym then do
                         result <- BE.getSymbolTypeST (idName idElem) 
                         case result of 
                             Left errorMsg -> do  
@@ -232,7 +232,7 @@ validateExpr elem@Function {} = do
                                 let errorMessage = "Invalid identifier. '" ++ idName idElem ++ " 'ctype' function "
                                                     ++ " requires an existing variable name to provide it's content "
                                                     ++ " but insteand found a predefined function name. "
-                                                    ++ " Related to function at column " ++ show (functionPos elem) ++"."
+                                                    ++ " Related to function at column " ++ show (functionPos imp) ++"."
                                 reportTypeError errorMessage
                                 return Nothing
                             Right justSomeType -> return justSomeType
@@ -240,179 +240,179 @@ validateExpr elem@Function {} = do
                     else do
                         let errorMsg = "Undefined symbol '" ++ idName idElem ++ "'. 'ctype' function requires an "
                                        ++ "existing variable name to provide it's content . Related to "
-                                       ++ "function at column " ++ show (functionPos elem) ++ "."
+                                       ++ "function at column " ++ show (functionPos imp) ++ "."
 
                         reportTypeError errorMsg
                         return Nothing
                 [_] -> do 
                     let errorMsg = "Invalid use. 'cvalue' expects a variable as an argument. Related to function "
-                                    ++ " at column " ++ show (functionPos elem) ++ "."
+                                    ++ " at column " ++ show (functionPos imp) ++ "."
 
                     reportTypeError errorMsg
                     return Nothing
-                _ -> reportInvalidNArgs 1 (functionPos elem) "cvalue"
+                _ -> reportInvalidNArgs 1 (functionPos imp) "cvalue"
 
-            "reset"   -> case functionArguments elem of 
+            "reset"   -> case functionArguments imp of 
 
-                [] -> return $ Just (Concrete {tp = Bool {}} )
-                _ -> reportInvalidNArgs 0 (functionPos elem) "reset"
+                [] -> return $ Just (dummyReturnBool )
+                _ -> reportInvalidNArgs 0 (functionPos imp) "reset"
 
-            "irandom" -> case functionArguments elem of 
+            "irandom" -> case functionArguments imp of 
 
-                [expr] -> do 
+                [expression] -> do 
 
-                    result <- validateExpr expr 
+                    result <- validateExpr expression 
                     case result of 
                         Nothing                  -> return Nothing
-                        Just Concrete {tp=Int{}} -> return $ Just (Concrete {tp=Int{}})
-                        Just other               -> reportInvalidFunctionArgs (functionPos elem) "irandom" [Concrete {tp=Int{}}] [other]
-                _ -> reportInvalidNArgs 1 (functionPos elem) "irandom"
+                        Just Concrete {tp=Int{}} -> return $ Just (dummyReturnInt)
+                        Just other               -> reportInvalidFunctionArgs (functionPos imp) "irandom" [dummyReturnInt] [other]
+                _ -> reportInvalidNArgs 1 (functionPos imp) "irandom"
 
-            "fibo"    -> case functionArguments elem of 
+            "fibo"    -> case functionArguments imp of 
 
                 [exprN] -> do 
 
                     result <- validateExpr exprN
 
-                    let intTypeResult = Just Concrete {tp = Int{}}
+                    let intTypeResult = Just dummyReturnInt 
 
                     case result of  
-                        goodResult@(Just Concrete {tp = Int{}}) -> return intTypeResult
+                        (Just Concrete {tp = Int{}}) -> return intTypeResult
                         Just bad                              -> do
-                            let goodType = [ Concrete{tp = Int {}}]
+                            let goodType = [ dummyReturnInt ]
 
-                            reportInvalidFunctionArgs (getPosition elem) "fibo" goodType [bad]
+                            reportInvalidFunctionArgs (getPosition imp) "fibo" goodType [bad]
                         _                                     -> return Nothing
-                _ -> reportInvalidNArgs 1 (getPosition elem) "fibo"
+                _ -> reportInvalidNArgs 1 (getPosition imp) "fibo"
 
-            "gcd"     -> case functionArguments elem of 
+            "gcd"     -> case functionArguments imp of 
 
                 [exprN, exprM] -> do
                     a <- validateExpr exprN 
                     b <- validateExpr exprM
 
-                    let intTypeResult = Just Concrete {tp = Int{}}
+                    let intTypeResult = Just dummyReturnInt 
 
                     case (a,b) of 
-                        goodResult@(Just Concrete {tp = Int{}}, Just Concrete {tp = Int {}} ) -> return intTypeResult
+                        (Just Concrete {tp = Int{}}, Just Concrete {tp = Int {}} ) -> return intTypeResult
                         (Just bad1, Just bad2)                                                -> do
-                            let goodTypes = [ Concrete{tp = Int {}}, Concrete {tp = Int {}} ]
+                            let goodTypes = [ dummyReturnInt, dummyReturnInt ]
 
-                            reportInvalidFunctionArgs (functionPos elem) "gcd" goodTypes [bad1,bad2]
+                            reportInvalidFunctionArgs (functionPos imp) "gcd" goodTypes [bad1,bad2]
                         (_, _)                                                                -> return Nothing
-                _ -> reportInvalidNArgs 2 (functionPos elem) "gcd"
+                _ -> reportInvalidNArgs 2 (functionPos imp) "gcd"
 
-            "now"     -> case functionArguments elem of 
-                [] -> return $ Just Concrete {tp=Int{}} 
-                _ -> reportInvalidNArgs 0 (functionPos elem) "now"
+            "now"     -> case functionArguments imp of 
+                [] -> return $ Just dummyReturnInt
+                _ -> reportInvalidNArgs 0 (functionPos imp) "now"
             _ -> undefined
 
         else do 
-            let errorMsg = functionName elem ++ " is not a Dyslexio reckognized function."
+            let errorMsg = functionName imp ++ " is not a Dyslexio reckognized function."
             reportTypeError errorMsg 
             return Nothing
-validateExpr IntExp{}  = return $ Just Concrete{tp=Int{}}
-validateExpr BoolExp{} = return $ Just Concrete{tp=Bool{}}
-validateExpr elem@LazyExp{} = do 
-    inner <- validateExpr (lazyVal elem)
+validateExpr IntExp{}  = return $ Just dummyReturnInt 
+validateExpr BoolExp{} = return $ Just dummyReturnBool 
+validateExpr imp@LazyExp{} = do 
+    inner <- validateExpr (lazyVal imp)
     case inner of 
         Nothing                          -> return Nothing
-        Just Concrete{tp=typeOfInterest} -> return $ Just Lazy {tp=typeOfInterest}
+        Just Concrete{tp=typeOfInterest} -> return $ Just dummyReturnLazyInt{tp=typeOfInterest} 
         toReturn@(Just Lazy{})           -> return toReturn
-validateExpr elem@Add{} = do 
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+validateExpr imp@Add{} = do 
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateArithmetic 2 (addPos elem) "+" [lse,rse]
-validateExpr elem@Sub{} = do 
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateArithmetic 2 (addPos imp) "+" [lse,rse]
+validateExpr imp@Sub{} = do 
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateArithmetic 2 (subPos elem) "-" [lse,rse]
-validateExpr elem@Minus{} = do 
-    exp <- validateExpr $ minusVal elem
+    validateArithmetic 2 (subPos imp) "-" [lse,rse]
+validateExpr imp@Minus{} = do 
+    expression <- validateExpr $ minusVal imp
 
-    validateArithmetic 1 (subPos elem) "Unary -" [exp]
-validateExpr elem@Mas{} = do 
-    exp <- validateExpr $ masVal elem
+    validateArithmetic 1 (subPos imp) "Unary -" [expression]
+validateExpr imp@Mas{} = do 
+    expression <- validateExpr $ masVal imp
 
-    validateArithmetic 1 (masPos elem) "Unary +" [exp]
-validateExpr elem@Mult{} = do 
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateArithmetic 1 (masPos imp) "Unary +" [expression]
+validateExpr imp@Mult{} = do 
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateArithmetic 2 (multPos elem) "*" [lse,rse]
-validateExpr elem@Mod{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateArithmetic 2 (multPos imp) "*" [lse,rse]
+validateExpr imp@Mod{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateArithmetic 2 (modPos elem) "%" [lse,rse]
-validateExpr elem@Power{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateArithmetic 2 (modPos imp) "%" [lse,rse]
+validateExpr imp@Power{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateArithmetic 2 (powerPos elem) "^" [lse,rse]
-validateExpr elem@LessThan{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateArithmetic 2 (powerPos imp) "^" [lse,rse]
+validateExpr imp@LessThan{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateRelational 2 (ltPos elem) "<" [lse,rse]
-validateExpr elem@LessEqualThan{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateRelational 2 (ltPos imp) "<" [lse,rse]
+validateExpr imp@LessEqualThan{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateRelational 2 (letPos elem) "<=" [lse,rse]
-validateExpr elem@GreaterThan{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateRelational 2 (letPos imp) "<=" [lse,rse]
+validateExpr imp@GreaterThan{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateRelational 2 (gtPos elem) ">" [lse,rse]
-validateExpr elem@GreaterEqualThan{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateRelational 2 (gtPos imp) ">" [lse,rse]
+validateExpr imp@GreaterEqualThan{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateRelational 2 (geqPos elem) ">=" [lse,rse]
-validateExpr elem@Equal{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
-
-    if isJust lse && isJust rse then do
-        if (lse == rse) then return lse
-        else do 
-            let errorMsg = "Invalid types. Equality expects elements of equal type, but types differ."
-                           ++ "At column " ++ show (getPosition elem) ++ "."
-            reportTypeError errorMsg
-            return Nothing
-                
-    else return Nothing
-validateExpr elem@NotEqual{} = do
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    validateRelational 2 (geqPos imp) ">=" [lse,rse]
+validateExpr imp@Equal{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
     if isJust lse && isJust rse then do
         if (lse == rse) then return lse
         else do 
-            let errorMsg = "Invalid types. Inequality expects elements of equal type, but types differ."
-                           ++ "At column " ++ show (getPosition elem) ++ "."
+            let errorMsg = "Invalid types. Equality expects impents of equal type, but types differ."
+                           ++ "At column " ++ show (getPosition imp) ++ "."
             reportTypeError errorMsg
             return Nothing
                 
     else return Nothing
-validateExpr elem@And{} = do 
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+validateExpr imp@NotEqual{} = do
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateBoolean 2 (getPosition elem) "&&" [lse,rse]
-validateExpr elem@Or{} = do 
-    lse <- validateExpr $ lhs elem
-    rse <- validateExpr $ rhs elem
+    if isJust lse && isJust rse then do
+        if (lse == rse) then return lse
+        else do 
+            let errorMsg = "Invalid types. Inequality expects impents of equal type, but types differ."
+                           ++ "At column " ++ show (getPosition imp) ++ "."
+            reportTypeError errorMsg
+            return Nothing
+                
+    else return Nothing
+validateExpr imp@And{} = do 
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateBoolean 2 (getPosition elem) "||" [lse,rse]
-validateExpr elem@Not{} = do 
-    expr <- validateExpr $ notVal elem
+    validateBoolean 2 (getPosition imp) "&&" [lse,rse]
+validateExpr imp@Or{} = do 
+    lse <- validateExpr $ lhs imp
+    rse <- validateExpr $ rhs imp
 
-    validateBoolean 1 (getPosition elem) "!" [expr]
-validateExpr elem@Parentheses{} = validateExpr (parenthVal elem)
+    validateBoolean 2 (getPosition imp) "||" [lse,rse]
+validateExpr imp@Not{} = do 
+    expression <- validateExpr $ notVal imp
+
+    validateBoolean 1 (getPosition imp) "!" [expression]
+validateExpr imp@Parentheses{} = validateExpr (parenthVal imp)
         
 -- | Encapsulated type validation for onto operations.
 validateOntoOperator :: Type -> Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type)
@@ -430,19 +430,19 @@ validateOntoOperator interestingType nArgs errorPos opId xs =
 
 -- | Encapsulated type validation for arithmetic operations.
 validateArithmetic :: Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type)       
-validateArithmetic = validateOntoOperator (Concrete {tp=Int{}})
+validateArithmetic = validateOntoOperator (dummyReturnInt)
 
 -- | Encapsulate type validation for boolean operations.
 validateBoolean :: Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type) 
-validateBoolean = validateOntoOperator (Concrete {tp=Bool{}})
+validateBoolean = validateOntoOperator (dummyReturnBool)
 
 -- | Encapsulated type validation for relational operations.
 validateRelational :: Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type)       
 validateRelational _ _ _ [] = error "Dyslexio. This shouldn't happen."
 validateRelational nArgs errorPos opId xs = do 
 
-    let relType = Concrete {tp=Bool{}}
-        argType = Concrete {tp=Int{}}
+    let relType = dummyReturnBool 
+        argType = dummyReturnInt 
 
     if all isJust xs then do
         if all (== Just argType) xs then return $ Just relType
@@ -457,9 +457,9 @@ validateRelational nArgs errorPos opId xs = do
  - where a lazy T can hold either a value of type T or an expression that would eventually be T
  -}
 relaxedTypeEquality :: Type -> Type -> Bool
-lhs `relaxedTypeEquality` rhs = case lhs of 
-    Lazy{} -> tp lhs == tp rhs 
-    _      -> lhs == rhs 
+lse `relaxedTypeEquality` rse = case lse of 
+    Lazy{} -> tp lse == tp rse 
+    _      -> lse == rse 
 
 
 {- Error report Helpers -}
@@ -495,3 +495,24 @@ reportInvalidOpTypes errorPos op expectedTypes actualTypes = do
 
     reportTypeError errorMsg
     return Nothing
+
+{- Constants -}
+
+dummyReturnInt , dummyReturnBool, dummyReturnLazyInt :: Type 
+dummyReturnInt = Concrete {
+    tp=Int{ intTypePos = dummyPosition },
+    concreteTypePos = dummyPosition
+    }
+dummyReturnBool = Concrete {
+    tp=Bool{ boolTypePos = dummyPosition }, 
+    concreteTypePos = dummyPosition
+    }
+
+dummyReturnLazyInt = Lazy { 
+    tp = Int{ intTypePos = dummyPosition }, 
+    lazyTypePos = dummyPosition
+}
+
+
+dummyPosition :: Int
+dummyPosition = (-1)

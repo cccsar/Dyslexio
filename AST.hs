@@ -48,15 +48,15 @@ data Program
 
 instance Show Program where
     show Ins {list = xs}  = intercalate "\n" . map show $ xs
-    show Ex {expr = exp} = show exp
+    show Ex {expr = expression} = show expression
 
 data Instruction
    = Inicialization { initType :: Type, initId ::  Id , initExpr :: Expr, initPos :: Int }
    | Assignment { assignId :: Id , assignExpr :: Expr, assignPos :: Int }
 
 instance Show Instruction where
-    show Assignment { assignId = progId , assignExpr = expr} = "assign(" ++ progId ++ ", " ++ show expr ++ ")"
-    show Inicialization { initType = tp, initId = progId, initExpr = expr} = "def(" ++ show tp ++ ", " ++ progId ++ ", " ++ show expr ++ ")"
+    show Assignment { assignId = progId , assignExpr = expression} = "assign(" ++ progId ++ ", " ++ show expression ++ ")"
+    show Inicialization { initType = aType, initId = progId, initExpr = expression} = "def(" ++ show aType ++ ", " ++ progId ++ ", " ++ show expression ++ ")"
 
 data Expr
     -- Leafs == Non terminals
@@ -94,12 +94,12 @@ data Expr
 instance Show Expr where
     show IntExp {intVal = num}                   = show num
     show BoolExp {boolVal = val}                 = show val
-    show LazyExp {lazyVal = expr}                = "lazyExpr( " ++ show expr ++ " )"
+    show LazyExp {lazyVal = expression}          = "lazyExpr( " ++ show expression ++ " )"
 
     show Add {lhs = lse, rhs = rse}              = showBinOp lse rse "+"
     show Sub {lhs = lse, rhs = rse}              = showBinOp lse rse "-"
-    show Minus {minusVal = expr}                 = showUnOp expr "-"
-    show Mas {masVal = expr}                     = showUnOp expr "+"
+    show Minus {minusVal = expression}           = showUnOp expression "-"
+    show Mas {masVal = expression}               = showUnOp expression "+"
     show Mult {lhs = lse, rhs = rse}             = showBinOp lse rse "*"
     show Mod {lhs = lse, rhs = rse}              = showBinOp lse rse "%"
     show Power {lhs = lse, rhs = rse}            = showBinOp lse rse "^"
@@ -112,9 +112,9 @@ instance Show Expr where
     show NotEqual {lhs = lse, rhs = rse}         = showBinOp lse rse "<>"
     show And {lhs = lse, rhs = rse}              = showBinOp lse rse "&&"
     show Or {lhs = lse, rhs = rse}               = showBinOp lse rse "||"
-    show Not {notVal = expr}                     = showUnOp expr "!"
+    show Not {notVal = expression}               = showUnOp expression "!"
 
-    show Parentheses {parenthVal = expr}         = show expr
+    show Parentheses {parenthVal = expression}   = show expression
     show Identifier {idName = name}              = name
     show Function {functionName = name, functionArguments = exprs} = name ++ "( " ++ (intercalate ", " . map show $ exprs) ++ " )"
 
@@ -122,7 +122,7 @@ showBinOp :: Expr -> Expr -> String -> String
 showBinOp left right op = op ++ "(" ++ show left ++ ", " ++ show right ++ ")"
 
 showUnOp :: Expr -> String -> String
-showUnOp expr op = op ++ show expr
+showUnOp expression op = op ++ show expression
 
 class WithPosition a where 
     getPosition :: a -> Int 

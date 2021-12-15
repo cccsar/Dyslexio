@@ -50,9 +50,6 @@ choice input = case words input of
     [".failed"]  -> chooseFailed 
     [".reset"]   -> chooseReset 
     (".ast":xs)  -> checkLexErrors (unwords xs) astAction 
-    (".symT":xs) -> do
-        ustate <- get
-        lift $ putStrLn (ST.prettySymT (BE.symT ustate))
     ["."]        -> lift $ exitSuccess
     _            -> process input 
 
@@ -262,7 +259,7 @@ initializeDisplay = do
 prompt :: String
 prompt = "Dyslexio> "
 
-lexerAction , astAction :: String
+lexerAction , astAction, validateAction :: String
 lexerAction = "lexer"
 astAction   = "ast"
 validateAction = "validate"

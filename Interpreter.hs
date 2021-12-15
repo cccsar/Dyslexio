@@ -8,9 +8,9 @@ module Interpreter
  -}
 
 import System.IO  (hPutStrLn, stderr)
-import Control.Monad.State (lift, get)
+import Control.Monad.State (lift)
 import Data.Maybe (fromJust)
-import System.Random 
+import System.Random (newStdGen,randomR)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 
 import BackEnd
@@ -21,130 +21,141 @@ import TypeVer as TV
 
 -- | Execution of actions.
 execute :: Instruction -> GlobalState ()
-execute elem@Inicialization{} = do 
-    ustate <- get
-    
-    context <- getSymbolContextST (initId elem) 
-    result  <- eval (initExpr elem)
+execute imp@Inicialization{} = do 
+    context <- getSymbolContextST (initId imp) 
+    result  <- eval (initExpr imp)
 
     let extractedContext = fromJust context -- ### Typever pass guarantees that a context would be returned
         newContext = extractedContext { symbolContent = Just result }
 
-    insertSymbolST (initId elem) newContext
-execute elem@Assignment{} = do 
-    ustate <- get
-
-    context <- getSymbolContextST (assignId elem) 
-    result  <- eval (assignExpr elem)
+    insertSymbolST (initId imp) newContext
+execute imp@Assignment{} = do 
+    context <- getSymbolContextST (assignId imp) 
+    result  <- eval (assignExpr imp)
 
     let extractedContext = fromJust context -- ### Typever pass guarantees that a context would be returned
         newContext = extractedContext { symbolContent = Just result }
 
-    insertSymbolST (initId elem) newContext
+    insertSymbolST (assignId imp) newContext
 
 -- | Expression evaluation implementaiton.
 eval :: Expr -> GlobalState Result
 -- Leafs == Non terminals
-eval elem@IntExp {}  = return $ INT (intVal elem)
-eval elem@BoolExp {} = return $ BOOL (boolVal elem)
-eval elem@LazyExp {} = return $ LAZY (lazyVal elem)
+eval imp@IntExp {}  = return $ INT (intVal imp)
+eval imp@BoolExp {} = return $ BOOL (boolVal imp)
+eval imp@LazyExp {} = return $ LAZY (lazyVal imp)
 -- Arithmetical expressions
-eval elem@Add {}   = applyBinOpST "+" (lhs elem) (rhs elem)
-eval elem@Sub {}   = applyBinOpST "-" (lhs elem) (rhs elem)
-eval elem@Minus {} = applyUnOpST "-" (minusVal elem)
-eval elem@Mas {}   = applyUnOpST "+" (masVal elem)
-eval elem@Mult {}  = applyBinOpST "*" (lhs elem) (rhs elem) 
-eval elem@Mod {}   = applyBinOpST "%" (lhs elem) (rhs elem)
-eval elem@Power {} = applyBinOpST "^" (lhs elem) (rhs elem)
+eval imp@Add {}   = applyBinOpST "+" (lhs imp) (rhs imp)
+eval imp@Sub {}   = applyBinOpST "-" (lhs imp) (rhs imp)
+eval imp@Minus {} = applyUnOpST "-" (minusVal imp)
+eval imp@Mas {}   = applyUnOpST "+" (masVal imp)
+eval imp@Mult {}  = applyBinOpST "*" (lhs imp) (rhs imp) 
+eval imp@Mod {}   = applyBinOpST "%" (lhs imp) (rhs imp)
+eval imp@Power {} = applyBinOpST "^" (lhs imp) (rhs imp)
 -- Relational expressions
-eval elem@LessThan {}         = applyBinOpST "<" (lhs elem) (rhs elem) 
-eval elem@LessEqualThan {}    = applyBinOpST "<=" (lhs elem) (rhs elem)
-eval elem@GreaterThan {}      = applyBinOpST ">" (lhs elem) (rhs elem)
-eval elem@GreaterEqualThan {} = applyBinOpST ">=" (lhs elem) (rhs elem)
-eval elem@Equal {}            = applyBinOpST "=" (lhs elem) (rhs elem)
-eval elem@NotEqual {}         = applyBinOpST "/=" (lhs elem) (rhs elem)
+eval imp@LessThan {}         = applyBinOpST "<" (lhs imp) (rhs imp) 
+eval imp@LessEqualThan {}    = applyBinOpST "<=" (lhs imp) (rhs imp)
+eval imp@GreaterThan {}      = applyBinOpST ">" (lhs imp) (rhs imp)
+eval imp@GreaterEqualThan {} = applyBinOpST ">=" (lhs imp) (rhs imp)
+eval imp@Equal {}            = applyBinOpST "=" (lhs imp) (rhs imp)
+eval imp@NotEqual {}         = applyBinOpST "/=" (lhs imp) (rhs imp)
 -- Boolean expressions
-eval elem@And {} = applyBinOpST "&&" (lhs elem) (rhs elem)
-eval elem@Or {}  = applyBinOpST "||" (lhs elem) (rhs elem)
-eval elem@Not {} = applyUnOpST "!" (notVal elem)
+eval imp@And {} = applyBinOpST "&&" (lhs imp) (rhs imp)
+eval imp@Or {}  = applyBinOpST "||" (lhs imp) (rhs imp)
+eval imp@Not {} = applyUnOpST "!" (notVal imp)
 -- Miscellaneus
-eval elem@Parentheses {} = eval (parenthVal elem)
-eval elem@Identifier {}  = do 
-    result <- getSymbolContentST (idName elem)
+eval imp@Parentheses {} = eval (parenthVal imp)
+eval imp@Identifier {}  = do 
+    result <- getSymbolContentST (idName imp)
 
     case result of 
-        ERROR  -> return ERROR
-        result -> return result
+        ERROR            -> return ERROR
+        LAZY expression  -> eval expression
+        resultExpression -> return resultExpression
         
-eval elem@Function {}    = case functionName elem of 
+eval imp@Function {}    = case functionName imp of 
     "if" -> do 
-        
-        let [cond,success,failure] = functionArguments elem
+        case functionArguments imp of 
+            [cond, success, failure] -> do 
 
-        preCheck <- eval cond 
+                preCheck <- eval cond 
+      
+                case preCheck of 
+                    BOOL check -> if check then eval success 
+                                  else eval failure
 
-        let BOOL check = preCheck
-
-        if check then eval success 
-            else eval failure
+                    _ -> unexpectedFunctionError "if"
+            _ -> unexpectedFunctionError "if"
     "type" -> do 
-        let [arg] = functionArguments elem
 
-        result <- TV.validateExpr arg 
+        case functionArguments imp of 
+            [arg] -> do
 
-        let Just content = result
-            actual = tp content
-
-        return $ REFXTYPE actual 
+                result <- TV.validateExpr arg 
+      
+                case result of 
+                    Just content -> return $ REFXTYPE (tp content)
+                    _ -> unexpectedFunctionError "type"
+            _ -> unexpectedFunctionError "type"
     "ltype" -> do 
-        let [elemId@Identifier{}] = functionArguments elem
 
-        result <- getSymbolTypeST (idName elemId) 
+        case functionArguments imp of
+            [impId@Identifier{}] -> do
 
-        let Right (Just actualType) = result
-
-        return $ LTYPE actualType
+                result <- getSymbolTypeST (idName impId) 
+                case result of 
+                    Right (Just actualType) -> return $ LTYPE actualType
+                    _ -> unexpectedFunctionError "ltype"
+            _ -> unexpectedFunctionError "ltype"
 
     "cvalue" -> do 
-        let [elemId@Identifier{}] = functionArguments elem
-
-        getSymbolContentST (idName elemId)
+        case functionArguments imp of 
+            [impId@Identifier{}] -> getSymbolContentST (idName impId)
+            _ -> unexpectedFunctionError "cvalue"
 
     "reset" -> do 
         resetSymT 
         return (BOOL True)
     "irandom" -> do 
 
-        let [uBound] = functionArguments elem
+        case functionArguments imp of 
+            [uBound] -> do 
 
-        result <- eval uBound
-        generator <- lift $ newStdGen 
+                result <- eval uBound
+                generator <- lift $ newStdGen 
 
-        let (INT n) = result
+                case result of 
+                    (INT n) -> return $ INT $ fst $ randomR (0,n-1) generator
 
-        return $ INT $ fst $ randomR (0,n-1) generator
+                    _ -> unexpectedFunctionError "irandom"
+            _ -> unexpectedFunctionError "irandom" 
     "fibo" -> do
-        let [exp] = functionArguments elem
-
-        result <- eval exp
-
-        let (INT n) = result
-
-        fibo n        
+        case functionArguments imp of
+            [expression] -> do 
+                result <- eval expression
+      
+                case result of 
+                    (INT n) -> fibo n        
+                    _       -> unexpectedFunctionError "fibo" 
+            _ -> unexpectedFunctionError "fibo" 
+            
     "gcd" -> do
-        let [expA,expB] = functionArguments elem
+        case functionArguments imp of 
+            [expA, expB] -> do
 
-        resultA <- eval expA
-        resultB <- eval expB
+                resultA <- eval expA
+                resultB <- eval expB
+      
+                case (resultA, resultB) of 
+                    (INT n, INT m) -> return $ INT (gcd n m)
+                    _              -> unexpectedFunctionError "gcd" 
+            _ -> unexpectedFunctionError "gcd" 
 
-        let (INT n, INT m) = (resultA, resultB) 
-
-        return $ INT (gcd n m)
     "now" -> do 
         unixTime <- lift $ getPOSIXTime
 
         return $ (INT $ floor $ toRational unixTime)
-    _ -> error "Dyslexio: This shouldn't happen"
+    _ -> unexpectedCondition "eval / functions"
 
 -- | FrontEnd to call for the application of a statefull binary operation.
 applyBinOpST :: String -> Expr -> Expr -> GlobalState Result
@@ -170,14 +181,14 @@ applyBinOp op (INT l) (INT r)  = case op of
     "<=" -> return $ BOOL (l <= r)
     "="  -> return $ BOOL (l == r)
     "/=" -> return $ BOOL (l /= r)
-    _    -> error "Dyslexio: This shouldn't happen."
+    _    -> unexpectedCondition "applyBinOp / relational and integer operators"
 applyBinOp op (BOOL l) (BOOL r)  = case op of 
     "&&" -> return $ BOOL (l && r )
     "||" -> return $ BOOL (l || r)
     "="  -> return $ BOOL (l == r) 
     "/=" -> return $ BOOL (l /= r)
-    _    -> error "Dyslexio: This shouldn't happen."
-applyBinOp _ _ _ = error "Dyslexio: This shouldn't happen."
+    _    -> unexpectedCondition "applyBinOp / boolean operators"
+applyBinOp _ _ _ = unexpectedCondition "applyBinOp / catch all"
 
 -- | Application of a known unary operation using a state wrapper.
 applyUnOpST :: String -> Expr -> GlobalState Result
@@ -191,9 +202,9 @@ applyUnOp _ ERROR = ERROR
 applyUnOp op (INT v) = case op of 
     "+" -> INT v
     "-" -> INT (-v) 
-    _   -> error "Dyslexio: This shouldn't happen"
+    _   -> unexpectedCondition "applyUnOp"
 applyUnOp "!" (BOOL v) = BOOL (not v) 
-applyUnOp _ _ = error "Dyslexio: This shouldn't happen."
+applyUnOp _ _ = unexpectedCondition "applyUnOp"
 
 
 {- Some languaje specific implementation of functions -}
@@ -207,18 +218,18 @@ myMod m n
 -- | Language specific 'elevation to power' implementation. Since negative exponents are not allowed
 -- a state wrapper is used to report the error and propagate it.
 myPow :: Int -> Int -> GlobalState Result
-myPow base exp  
-    | exp < 0   = do 
+myPow bs xp
+    | xp < 0   = do 
             let errorMsg = "Execution error. Power requires an integer as the base and a non negative integer as the exponent." 
             reportExecutionError errorMsg
             return ERROR
 
-    | otherwise = return $ INT (powTr base base exp)
+    | otherwise = return $ INT (powTr bs bs xp)
     where
         powTr :: Int -> Int -> Int -> Int
         powTr _ _ 0 = 1
         powTr _ result 1 = result 
-        powTr base acc exp = powTr base (acc*base) (exp-1)
+        powTr base acc expo = powTr base (acc*base) (expo-1)
 
 fibo :: Int -> GlobalState Result
 fibo n
@@ -231,13 +242,22 @@ fibo n
         myFibo :: Int -> Int
         myFibo 0 = 0
         myFibo 1 = 1 
-        myFibo n = myFibo (n-1) + myFibo (n-2)
+        myFibo m = myFibo (m-1) + myFibo (m-2)
 
 {- Constants -}
 
+execErrorPrefix , unexpectedErrorPrefix :: String
 execErrorPrefix = "-->ExecError: "
+
+unexpectedErrorPrefix = "Dyslexio: This Shoulnd't happen. "
 
 {- Error report helpers -}
 
 reportExecutionError :: String -> GlobalState () 
 reportExecutionError errorMsg = lift $ hPutStrLn stderr (execErrorPrefix ++ errorMsg)
+
+unexpectedCondition :: String -> a 
+unexpectedCondition context = error $ unexpectedErrorPrefix  ++ context
+
+unexpectedFunctionError :: String -> a
+unexpectedFunctionError foo = error $ unexpectedErrorPrefix ++ " Typever guarantees bindings for " ++ foo

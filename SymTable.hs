@@ -46,6 +46,7 @@ instance Show Result where
     show (REFXTYPE tp) = show tp 
     show (LTYPE tp) = show tp
     show ERROR = "" 
+    show VOID = "()" 
 
 data SymbolContext = Context { 
     symbolType :: Maybe A.Type,
@@ -70,13 +71,13 @@ getSymbolContext :: String -> SymTable -> Maybe SymbolContext
 getSymbolContext = M.lookup
 
 getSymbolType :: String -> SymTable -> Either String (Maybe A.Type)
-getSymbolType id symT = case getSymbolContext id symT of
-    Nothing      -> Left $ "Symbol '" ++ id ++ "' not in environment."
+getSymbolType anId symT = case getSymbolContext anId symT of
+    Nothing      -> Left $ "Symbol '" ++ anId ++ "' not in environment."
     Just context -> Right (symbolType context)
 
 getSymbolContent :: String -> SymTable -> Either String Result
-getSymbolContent id symT = case getSymbolContext id symT of
-    Nothing      -> Left $ "Symbol '" ++ id ++ "' not in environment."
+getSymbolContent anId symT = case getSymbolContext anId symT of
+    Nothing      -> Left $ "Symbol '" ++ anId ++ "' not in environment."
     Just context -> Right $ fromJust $ symbolContent context
 
 reset :: SymTable
@@ -85,6 +86,7 @@ reset = initialST
 {- Constants -}
 
 -- Known Symbols at all times. Those are the names of the predefined functions.
+predefinedSymbols :: [String]
 predefinedSymbols = [
     "if",
     "type",
@@ -97,4 +99,5 @@ predefinedSymbols = [
     "now" ]
 
 -- Initial symbolTable to work with
+initialST :: M.Map String SymbolContext
 initialST = M.fromList $ zip predefinedSymbols (repeat (Context {symbolType = Nothing, symbolContent = Nothing}))

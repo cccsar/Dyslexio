@@ -1,6 +1,6 @@
 module BackEnd
 ( UserState(..)
-, GlobalState (..)
+, GlobalState
 , resetSymT
 , insertDictionaryST
 , insertSymbolST
@@ -60,42 +60,42 @@ resetSymT = do
 
 -- | Statefull insertion of a symbol into GlobalState symT 
 insertSymbolST :: String -> ST.SymbolContext -> GlobalState ()
-insertSymbolST id context = do
+insertSymbolST anId context = do
     ustate <- get
 
-    let newST = ST.insertSymbolInfo id context (symT ustate)
+    let newST = ST.insertSymbolInfo anId context (symT ustate)
 
     put ustate { symT = newST }
 
 -- | Statefull query of a symbol into GlobalState symT
 symbolDefinedST :: String -> GlobalState Bool
-symbolDefinedST id = fmap isJust (getSymbolContextST id)
+symbolDefinedST anId = fmap isJust (getSymbolContextST anId)
 
 -- | Statefull query of symbol context.
 getSymbolContextST :: String -> GlobalState (Maybe ST.SymbolContext)
-getSymbolContextST id = do
+getSymbolContextST anId = do
     ustate <- get
 
-    let context = ST.getSymbolContext id (symT ustate)
+    let context = ST.getSymbolContext anId (symT ustate)
 
     return context
 
 -- | Statefull query of symbol type.
 getSymbolTypeST :: String -> GlobalState (Either String (Maybe A.Type))
-getSymbolTypeST id = do
+getSymbolTypeST anId = do
     ustate <- get
 
-    return $ ST.getSymbolType id (symT ustate)
+    return $ ST.getSymbolType anId (symT ustate)
 
 {- | Statefull query of symbol content. It is assumed that the symbol content
  - is either always present or the symbol not exists. This is possible due to static type validation,
  - preventing symbols without a type to go through
  -}
 getSymbolContentST :: String -> GlobalState ST.Result
-getSymbolContentST id = do
+getSymbolContentST anId = do
     ustate <- get
 
-    case ST.getSymbolContent id (symT ustate) of
+    case ST.getSymbolContent anId (symT ustate) of
         Left errorMsg -> do
             -- insertError errorMsg ###
             lift $ putStrLn errorMsg
@@ -138,7 +138,7 @@ numberedLines = numberLines 1
 
 -- | Function necessary to interpretate actions that were successfully type validated.
 removeCancelledActions :: A.Program -> [Bool] -> A.Program
-removeCancelledActions elem@A.Ins{} xs = elem{ A.list = map snd . filter fst . zip xs $ A.list elem }
+removeCancelledActions imp@A.Ins{} xs = imp{ A.list = map snd . filter fst . zip xs $ A.list imp }
 removeCancelledActions el _ = el
 
 {- Relevant Virtual Machine functions -}
