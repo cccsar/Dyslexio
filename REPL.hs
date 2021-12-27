@@ -154,7 +154,7 @@ onSuccessLex :: [Tk.ContextToken] -> String -> String -> BE.GlobalState ()
 onSuccessLex tokens inputLine action = case action of 
     "lexer"     -> lift $ putStrLn $ getAcceptationString inputLine tokens
     "ast"       -> showAST tokens 
-    "validate"  -> validate tokens 
+    "validate"  -> validate tokens inputLine
     _           -> error "REPL Error --> Panic!: This condition shouldn't ever occur."
 
 {- | Print lexer error accordingly -}
@@ -180,14 +180,14 @@ onFailLex errors inputLine = do
 
 {- | Performs the logic for parsing and then going through type validation and 
  - evaluation with the AST -}
-validate :: [Tk.ContextToken] -> BE.GlobalState () 
-validate tks = do
+validate :: [Tk.ContextToken] -> String -> BE.GlobalState () 
+validate tks inputLine = do
     let parseResult = BE.parse tks
 
     case parseResult of
         Right resultAst    -> do 
 
-            typeverResult <- Tv.validateProgram resultAst
+            typeverResult <- Tv.validateProgram resultAst inputLine
 
             case typeverResult of 
                 
@@ -195,7 +195,7 @@ validate tks = do
                 Left listOfAcceptation -> do
                     mapM_ I.execute (A.list (BE.removeCancelledActions resultAst listOfAcceptation)) 
 
-                    if and listOfAcceptation then lift $ putStrLn $ "Ok: All actions performed."
+                    if and listOfAcceptation then lift $ putStrLn $ "ACK: " ++ inputLine
                         else lift $ putStrLn $ "Warning: Some actions weren't performed"
 
                 -- Here are the expressions ### Enhance the semantics and pipeline for this.
@@ -204,7 +204,7 @@ validate tks = do
 
                     case resultEval of 
                         ST.ERROR -> return () 
-                        _        -> lift $ putStrLn $ "OK: Result for expression is ==> " ++ show resultEval 
+                        _        -> lift $ putStrLn $ "OK: " ++ inputLine ++ " ==> "  ++ show resultEval
                     
                 Right _         -> return () 
 

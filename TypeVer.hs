@@ -25,20 +25,20 @@ import qualified BackEnd as BE
 
 -- | Validating a program handles either proper type verification for an action : the actions happens or not, 
 -- and type validation for an expression, it has a well defined type, or not.
-validateProgram :: Program -> BE.GlobalState (Either [Bool] (Maybe Type))
-validateProgram imp@Ins{} = do 
-    resultList <- mapM validateInstruction (list imp) 
+validateProgram :: Program -> String -> BE.GlobalState (Either [Bool] (Maybe Type))
+validateProgram imp@Ins{} inputLine = do 
+    resultList <- mapM (\x -> validateInstruction x inputLine) (list imp) 
     return $ Left resultList
-validateProgram imp@Ex{}  = Right <$> validateExpr (expr imp) 
+validateProgram imp@Ex{} inputLine = Right <$> validateExpr (expr imp) 
 
 -- | Instructions type validation.
-validateInstruction :: Instruction -> BE.GlobalState Bool
-validateInstruction imp@Inicialization{} = do 
+validateInstruction :: Instruction -> String -> BE.GlobalState Bool
+validateInstruction imp@Inicialization{} inputLine = do 
 
     check <- BE.symbolDefinedST (initId imp)     
 
     if check then do 
-        let errorMsg = "Symbol for inicialization already defined. Related to inicialization at column " 
+        let errorMsg = inputLine ++ ". Symbol for inicialization already defined. Related to inicialization at column " 
                        ++ show (getPosition imp) ++ ". Ignoring type validation."
 
         reportTypeError errorMsg
@@ -49,7 +49,7 @@ validateInstruction imp@Inicialization{} = do
      
             case expressionType of 
                 Nothing ->  do
-                    let errorMsg = "Invalid inicialization types. Related to inicialization at column" 
+                    let errorMsg = inputLine ++ ". Invalid inicialization types. Related to inicialization at column" 
                                    ++ show  (getPosition imp) ++ ". Found type " 
                                    ++ show  (initType imp) ++ " and a type error for the expression. "
                     
@@ -67,7 +67,7 @@ validateInstruction imp@Inicialization{} = do
                         return True
                     
                     else do 
-                        let errorMsg = "Invalid inicialization types. Related to inicialization at column " 
+                        let errorMsg = inputLine ++ ". Invalid inicialization types. Related to inicialization at column " 
                                         ++ show (getPosition imp) ++ ". Found types " 
                                         ++ show (initType imp) ++ " and " ++ show aType 
                                         ++ " , but expected equal types."
@@ -75,7 +75,7 @@ validateInstruction imp@Inicialization{} = do
                         
                         reportTypeError errorMsg
                         return False
-validateInstruction imp@Assignment{} = do
+validateInstruction imp@Assignment{} inputLine= do
     check <- BE.symbolDefinedST (assignId imp)     
 
     if check then do 
@@ -89,7 +89,7 @@ validateInstruction imp@Assignment{} = do
 
             Right Nothing -> do 
 
-                let errorMsg = "A function cannot be assigned. Related to assignment at column " ++ show (getPosition imp) 
+                let errorMsg = inputLine ++ ". A function cannot be assigned. Related to assignment at column " ++ show (getPosition imp) 
                                ++ "."
                             
                 reportTypeError errorMsg
@@ -101,7 +101,7 @@ validateInstruction imp@Assignment{} = do
 
                 case resultExpr of 
                     Nothing ->  do
-                        let errorMsg = "Invalid assignment types. Related to assignment at column" 
+                        let errorMsg = inputLine ++ ". Invalid assignment types. Related to assignment at column" 
                                        ++ show  (getPosition imp) ++ ". Found type " 
                                        ++ show aSymbolType ++ " and a type error for the assignment expression. "
                         
@@ -110,7 +110,7 @@ validateInstruction imp@Assignment{} = do
                     Just expressionType -> 
                         if aSymbolType `relaxedTypeEquality` expressionType then return True 
                         else do 
-                            let errorMsg = "Invalid Assignment. Related to assignment at column" 
+                            let errorMsg = inputLine ++ ". Invalid Assignment. Related to assignment at column" 
                                            ++ show (getPosition imp) ++ ". Variable '" 
                                            ++ assignId imp ++ "' has not been defined."
 
@@ -118,7 +118,7 @@ validateInstruction imp@Assignment{} = do
                             return False
 
     else do
-        let errorMsg = "Invalid assignment. Related to assignment at column " ++ show (getPosition imp) 
+        let errorMsg = inputLine ++ ". Invalid assignment. Related to assignment at column " ++ show (getPosition imp) 
                        ++ ". Symbol '" ++ assignId imp ++ "' has not been defined. Ignoring type validation."
 
         reportTypeError errorMsg
@@ -469,7 +469,7 @@ lse `relaxedTypeEquality` rse = case lse of
 -- | Generic type error report.
 reportTypeError :: String -> BE.GlobalState() 
 reportTypeError msg = lift $ hPutStrLn stderr (tpPrefix ++ msg)
-    where tpPrefix = "--> TypeError: "
+    where tpPrefix = "Error: "
 
 -- | Report for invalid number of arguments of a predefined function.
 reportInvalidNArgs :: Int -> Int -> String -> BE.GlobalState (Maybe Type)
