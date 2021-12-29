@@ -1,0 +1,17 @@
+int australia := 42; 
+type(australia,1) 
+
+ltype(1,2,3)
+
+ltype(australia, 2) 
+
+cvalue(1,2,3,4)
+
+irandom(1,2)
+
+fibo()
+fibo(1,2)
+
+gcd(1,2,3)
+
+now(2)

@@ -1,0 +1,18 @@
+type(benesuela) 
+type(42)
+
+int redania := 73;
+ltype(redania +1)
+ltype(true)
+
+lazy int costarica := '2 + 1' ; 
+cvalue(costarica + 1)
+cvalue(true)
+
+irandom(false)
+
+fibo(true)
+
+gcd(true,false)
+
+gcd(5,true)
