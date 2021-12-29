@@ -1,0 +1,9 @@
+.load invalid-assignment
+.failed
+.load invalid-expression
+.failed
+.load invalid-function-call-nargs
+.failed
+.load invalid-function-call-types
+.failed
+.load invalid-init

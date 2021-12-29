@@ -1,6 +1,9 @@
 module BackEnd
 ( UserState(..)
 , GlobalState
+, errorRegistration
+, getFileErrorString
+, setInputLine
 , resetSymT
 , insertDictionaryST
 , insertSymbolST
@@ -23,6 +26,7 @@ where
 import Data.Char(isSpace)
 import Data.Maybe (isJust)
 import System.FilePath(FilePath)
+import System.IO (stderr,hPutStrLn)
 import Control.Monad.State
 
 import qualified Data.Map as M
@@ -42,15 +46,47 @@ type Filename = String
 type Dictionary a b = M.Map a [b]
 
 data UserState = UState
-    { errorDictionary :: Dictionary Filename ErrorContext,
-      nextLine :: Int,
-      currentOpenFile :: Maybe Filename,
-      pathName :: FilePath,
-      symT :: ST.SymTable
+    { errorDictionary :: Dictionary Filename ErrorContext
+    , inputLine :: String
+    , currentOpenFile :: Maybe Filename
+    , pathName :: FilePath
+    , nextLine :: Int
+    , symT :: ST.SymTable
     }
 
 type GlobalState a = StateT UserState IO a
 
+{- | Function for error report.
+ - It first checks if the error to be reported is a file error.
+ - * If it is, it adjusts print layout and inserts the error into the global error dictionary.
+ - * If it is not, simply displays the error.
+ -}
+errorRegistration :: String -> GlobalState ()
+errorRegistration errorString = do
+    ustate <- get
+    case currentOpenFile ustate of
+        Just filename -> do -- ! Print layout when errors appear on a file.
+            let fileErrorString = getFileErrorString filename (nextLine ustate) errorString
+ 
+            lift $ hPutStrLn stderr fileErrorString
+ 
+            -- Update error dictionary with found errors.
+            let lineNumber    = nextLine ustate
+                errorContext  = (lineNumber,errorString)
+
+            insertDictionaryST filename errorContext
+        _             -> lift $ hPutStrLn stderr errorString -- ! Print layout when errors are typed directly.
+
+-- | Given a file and it's related errors, returns a list of error strings.
+getFileErrorString :: String -> Int -> String -> String
+getFileErrorString filename line errorString = 
+    "( " ++ filename ++ ", " ++ show line ++ ", " ++ errorString ++ " )"
+
+-- | setter to quickly store input line.
+setInputLine :: String -> GlobalState ()
+setInputLine input = do 
+    ustate <- get
+    put ustate { inputLine = input }
 
 resetSymT :: GlobalState () 
 resetSymT = do 
@@ -160,6 +196,7 @@ parse tks = case P.parse tks of
 baseUserState :: UserState
 baseUserState = UState
                     { errorDictionary = M.empty
+                    , inputLine = ""
                     , nextLine = 1
                     , currentOpenFile = Nothing
                     , pathName = ""

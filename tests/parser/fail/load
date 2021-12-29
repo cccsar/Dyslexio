@@ -1,0 +1,9 @@
+.ast a := 42 ;
+.ast a := ; 
+
+.load load-1
+
+.failed
+
+.ast 42 + 42
+.ast a + b 

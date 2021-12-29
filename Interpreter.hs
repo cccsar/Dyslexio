@@ -13,39 +13,39 @@ module Interpreter
  - Most special functions are given the implementations of their equivalents in Haskell.
  -}
 
-import System.IO  (hPutStrLn, stderr)
-import Control.Monad.State (lift)
+import Control.Monad.State (lift, get)
 import Data.Maybe (fromJust)
 import System.Random (newStdGen,randomR)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 
-import BackEnd
+import qualified BackEnd as BE
 import AST
 import SymTable
 import TypeVer as TV
 
 
+
 -- | Execution of actions.
-execute :: Instruction -> GlobalState ()
+execute :: Instruction -> BE.GlobalState ()
 execute imp@Inicialization{} = do 
-    context <- getSymbolContextST (initId imp) 
+    context <- BE.getSymbolContextST (initId imp) 
     result  <- eval (initExpr imp)
 
     let extractedContext = fromJust context -- ### Typever pass guarantees that a context would be returned
         newContext = extractedContext { symbolContent = Just result }
 
-    insertSymbolST (initId imp) newContext
+    BE.insertSymbolST (initId imp) newContext
 execute imp@Assignment{} = do 
-    context <- getSymbolContextST (assignId imp) 
+    context <- BE.getSymbolContextST (assignId imp) 
     result  <- eval (assignExpr imp)
 
     let extractedContext = fromJust context -- ### Typever pass guarantees that a context would be returned
         newContext = extractedContext { symbolContent = Just result }
 
-    insertSymbolST (assignId imp) newContext
+    BE.insertSymbolST (assignId imp) newContext
 
 -- | Expression evaluation implementaiton.
-eval :: Expr -> GlobalState Result
+eval :: Expr -> BE.GlobalState Result
 -- Leafs == Non terminals
 eval imp@IntExp {}  = return $ INT (intVal imp)
 eval imp@BoolExp {} = return $ BOOL (boolVal imp)
@@ -72,7 +72,7 @@ eval imp@Not {} = applyUnOpST "!" (notVal imp)
 -- Miscellaneus
 eval imp@Parentheses {} = eval (parenthVal imp)
 eval imp@Identifier {}  = do 
-    result <- getSymbolContentST (idName imp)
+    result <- BE.getSymbolContentST (idName imp)
 
     case result of 
         ERROR            -> return ERROR
@@ -108,7 +108,7 @@ eval imp@Function {}    = case functionName imp of
         case functionArguments imp of
             [impId@Identifier{}] -> do
 
-                result <- getSymbolTypeST (idName impId) 
+                result <- BE.getSymbolTypeST (idName impId) 
                 case result of 
                     Right (Just actualType) -> return $ LTYPE actualType
                     _ -> unexpectedFunctionError "ltype"
@@ -116,11 +116,11 @@ eval imp@Function {}    = case functionName imp of
 
     "cvalue" -> do 
         case functionArguments imp of 
-            [impId@Identifier{}] -> getSymbolContentST (idName impId)
+            [impId@Identifier{}] -> BE.getSymbolContentST (idName impId)
             _ -> unexpectedFunctionError "cvalue"
 
     "reset" -> do 
-        resetSymT 
+        BE.resetSymT 
         return (BOOL True)
     "irandom" -> do 
 
@@ -131,7 +131,12 @@ eval imp@Function {}    = case functionName imp of
                 generator <- lift $ newStdGen 
 
                 case result of 
-                    (INT n) -> return $ INT $ fst $ randomR (0,n-1) generator
+                    (INT n) -> do 
+                        if n < 1 then do
+                            let errorMsg = "Invalid argument value. irandom requires a non negative integer value."
+                            reportExecutionError errorMsg
+                            return ERROR
+                        else  return $ INT $ fst $ randomR (0,n-1) generator
 
                     _ -> unexpectedFunctionError "irandom"
             _ -> unexpectedFunctionError "irandom" 
@@ -164,7 +169,7 @@ eval imp@Function {}    = case functionName imp of
     _ -> unexpectedCondition "eval / functions"
 
 -- | FrontEnd to call for the application of a statefull binary operation.
-applyBinOpST :: String -> Expr -> Expr -> GlobalState Result
+applyBinOpST :: String -> Expr -> Expr -> BE.GlobalState Result
 applyBinOpST op lse rse = do 
     lres <- eval lse
     rres <- eval rse 
@@ -172,7 +177,7 @@ applyBinOpST op lse rse = do
     applyBinOp op lres rres
 
 -- | Application of a known binary operation using a state wrapper.
-applyBinOp :: String -> Result -> Result -> GlobalState Result 
+applyBinOp :: String -> Result -> Result -> BE.GlobalState Result 
 applyBinOp _ ERROR _ = return ERROR
 applyBinOp _ _ ERROR = return ERROR
 applyBinOp op (INT l) (INT r)  = case op of 
@@ -197,7 +202,7 @@ applyBinOp op (BOOL l) (BOOL r)  = case op of
 applyBinOp _ _ _ = unexpectedCondition "applyBinOp / catch all"
 
 -- | Application of a known unary operation using a state wrapper.
-applyUnOpST :: String -> Expr -> GlobalState Result
+applyUnOpST :: String -> Expr -> BE.GlobalState Result
 applyUnOpST op val = do 
     el <- eval val 
     return $ applyUnOp op el 
@@ -223,10 +228,10 @@ myMod m n
 
 -- | Language specific 'elevation to power' implementation. Since negative exponents are not allowed
 -- a state wrapper is used to report the error and propagate it.
-myPow :: Int -> Int -> GlobalState Result
+myPow :: Int -> Int -> BE.GlobalState Result
 myPow bs xp
     | xp < 0   = do 
-            let errorMsg = "Execution error. Power requires an integer as the base and a non negative integer as the exponent." 
+            let errorMsg = "Power requires an integer as the base and a non negative integer as the exponent." 
             reportExecutionError errorMsg
             return ERROR
 
@@ -237,10 +242,10 @@ myPow bs xp
         powTr _ result 1 = result 
         powTr base acc expo = powTr base (acc*base) (expo-1)
 
-fibo :: Int -> GlobalState Result
+fibo :: Int -> BE.GlobalState Result
 fibo n
     | n < 0 = do 
-        let errorMsg = "Execution error. Fibonacci requires a possitive integer as argument."
+        let errorMsg = "Fibonacci requires a possitive integer as argument."
         reportExecutionError errorMsg
         return ERROR
     | otherwise = return $ INT (myFibo n) 
@@ -253,15 +258,17 @@ fibo n
 {- Constants -}
 
 execErrorPrefix , unexpectedErrorPrefix :: String
-execErrorPrefix = "-->ExecError: "
+execErrorPrefix = "Error : "
 
 unexpectedErrorPrefix = "Dyslexio: This Shoulnd't happen. "
 
 {- Error report helpers -}
 
 -- | Report of a runtime error.
-reportExecutionError :: String -> GlobalState () 
-reportExecutionError errorMsg = lift $ hPutStrLn stderr (execErrorPrefix ++ errorMsg)
+reportExecutionError :: String -> BE.GlobalState () 
+reportExecutionError errorMsg = do
+    ustate <- get
+    BE.errorRegistration (execErrorPrefix ++ "\"" ++ (BE.inputLine ustate) ++ "\" Runtime error: " ++ errorMsg)
 
 -- | Exit message for Dyslexio execution with context information of where it occured.
 unexpectedCondition :: String -> a 

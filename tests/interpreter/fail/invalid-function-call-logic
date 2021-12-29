@@ -1,0 +1,11 @@
+type(benesuela) 
+
+ltype(42)
+ltype(true)
+ltype(cosa)
+
+irandom(-5)
+
+fibo(-19)
+
+gcd(-1,-5)

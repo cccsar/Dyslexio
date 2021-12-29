@@ -8,7 +8,7 @@ module REPL
  - helper functions concerning display only.
 -}
 
-import Control.Monad (foldM)
+import Control.Monad (foldM, when)
 import Control.Monad.State
 import Data.Either (partitionEithers)
 import Data.List (intercalate)
@@ -42,20 +42,18 @@ loop = do
     loop
 
 -- | Logic for interpretation of special commands.
---choice :: BE.UserState -> String -> IO BE.UserState
 choice :: String -> BE.GlobalState ()
 choice input = case words input of
-    (".lex":xs)  -> checkLexErrors (unwords xs) lexerAction 
+    (".lex":xs)  -> BE.setInputLine (unwords xs) >> checkLexErrors lexerAction 
     (".load":xs) -> chooseLoad xs
     [".failed"]  -> chooseFailed 
     [".reset"]   -> chooseReset 
-    (".ast":xs)  -> checkLexErrors (unwords xs) astAction 
-    ["."]        -> lift $ exitSuccess
+    (".ast":xs)  -> BE.setInputLine (unwords xs) >> checkLexErrors astAction 
+    ["."]        -> lift exitSuccess
     []           -> return () 
-    _            -> process input 
+    _            -> BE.setInputLine input >> process
 
 -- | Implementation of logic for loading a file.
--- chooseLoad ::  BE.UserState -> [String] -> IO BE.UserState
 chooseLoad :: [String] -> BE.GlobalState ()
 chooseLoad input = do
     ustate <- get
@@ -96,6 +94,7 @@ chooseLoad input = do
                        , BE.currentOpenFile = BE.currentOpenFile ustate
                        , BE.pathName        = BE.pathName ustate
                        , BE.symT            = BE.symT ustate
+                       , BE.inputLine       = BE.inputLine ustate
                        } 
         else lift $ putStrLn $ "ERROR: No such file \"" ++ filename ++ "\"."
 
@@ -111,7 +110,7 @@ chooseFailed = do
             let errors = concatMap 
                           (\(filename,errorContext) -> 
                               map (\(line,errorString) -> 
-                                   '\t' : getFileErrorString filename line errorString ++ ","
+                                   '\t' : BE.getFileErrorString filename line errorString ++ ","
                                   )
                                   errorContext
                           )
@@ -129,66 +128,58 @@ chooseReset :: BE.GlobalState ()
 chooseReset = do
     ustate <- get
     if M.size (BE.errorDictionary ustate) == 0 
-        then lift $  putStrLn "List of errors is empty."  
+        then lift $ putStrLn "List of errors is empty."  
         else put $ ustate { BE.errorDictionary = M.empty } 
 
 {- REPL Interface functions -}
 
 -- | Only displays an error message for now.
-process :: String -> BE.GlobalState () 
-process inputLine = checkLexErrors inputLine validateAction --putStrLn $ "ERROR: " ++ inputLine ++ " ==> undefined interpretation."
-
+process :: BE.GlobalState () 
+process = checkLexErrors validateAction 
 
 {- | Given user or file input, check whether there is a lexer error and act accordingly -}
-checkLexErrors :: String -> String -> BE.GlobalState () 
-checkLexErrors inputLine action = do 
-    let scan = BE.lexer inputLine
+checkLexErrors :: String -> BE.GlobalState () 
+checkLexErrors action = do 
+    ustate <- get
+
+    let scan = BE.lexer (BE.inputLine ustate)
         (errors,tokens) = partitionEithers scan
 
     if null errors 
-        then onSuccessLex tokens inputLine action 
-        else onFailLex errors inputLine 
+        then onSuccessLex tokens action 
+        else onFailLex errors 
 
 {- | Given a token stream, depending on action either display successul tokenization or 
  - display AST as a program -}
-onSuccessLex :: [Tk.ContextToken] -> String -> String -> BE.GlobalState () 
-onSuccessLex tokens inputLine action = case action of 
-    "lexer"     -> lift $ putStrLn $ getAcceptationString inputLine tokens
-    "ast"       -> showAST tokens 
-    "validate"  -> validate tokens inputLine
-    _           -> error "REPL Error --> Panic!: This condition shouldn't ever occur."
+onSuccessLex :: [Tk.ContextToken] -> String -> BE.GlobalState () 
+onSuccessLex tokens action = do
+    ustate <- get
+    
+    case action of 
+        "lexer"     -> lift $ putStrLn $ getLexerAcceptationString (BE.inputLine ustate) tokens
+        "ast"       -> showAST tokens 
+        "validate"  -> validate tokens 
+        _           -> error "REPL Error --> Panic!: This condition shouldn't ever occur."
 
 {- | Print lexer error accordingly -}
-onFailLex :: [Err.TokenError] -> String -> BE.GlobalState () 
-onFailLex errors inputLine = do
-    ustate <- get
-    case BE.currentOpenFile ustate of
-        Just filename -> do
-            -- Print layout when errors appear on a file.
-            let errorString     = getErrorString inputLine errors
-                fileErrorString = getFileErrorString filename (BE.nextLine ustate) errorString
- 
-            lift $ putStrLn fileErrorString
- 
-            -- Update error dictionary with found errors.
-            let lineNumber    = BE.nextLine ustate
-                errorContext  = (lineNumber,errorString)
-
-            BE.insertDictionaryST filename errorContext
- 
-        _             -> lift $ putStrLn (getErrorString inputLine errors)
-            -- Print layout when errors are typed directly.
+onFailLex :: [Err.TokenError] -> BE.GlobalState () 
+onFailLex errors = do 
+    ustate <- get 
+    let errorString = getLexerErrorString (BE.inputLine ustate) errors
+    BE.errorRegistration errorString 
 
 {- | Performs the logic for parsing and then going through type validation and 
  - evaluation with the AST -}
-validate :: [Tk.ContextToken] -> String -> BE.GlobalState () 
-validate tks inputLine = do
+validate :: [Tk.ContextToken] -> BE.GlobalState () 
+validate tks = do
+    ustate <- get
     let parseResult = BE.parse tks
+
 
     case parseResult of
         Right resultAst    -> do 
 
-            typeverResult <- Tv.validateProgram resultAst inputLine
+            typeverResult <- Tv.validateProgram resultAst
 
             case typeverResult of 
                 
@@ -196,8 +187,7 @@ validate tks inputLine = do
                 Left listOfAcceptation -> do
                     mapM_ I.execute (A.list (BE.removeCancelledActions resultAst listOfAcceptation)) 
 
-                    if and listOfAcceptation then lift $ putStrLn $ "ACK: " ++ inputLine
-                        else lift $ putStrLn $ "Warning: Some actions weren't performed"
+                    when ( or listOfAcceptation ) $ lift $ putStrLn $ "ACK: " ++ (BE.inputLine ustate)
 
                 -- Here are the expressions ### Enhance the semantics and pipeline for this.
                 Right (Just _) -> do
@@ -205,11 +195,11 @@ validate tks inputLine = do
 
                     case resultEval of 
                         ST.ERROR -> return () 
-                        _        -> lift $ putStrLn $ "OK: " ++ inputLine ++ " ==> "  ++ show resultEval
+                        _        -> lift $ putStrLn $ "OK: " ++ (BE.inputLine ustate) ++ " ==> "  ++ show resultEval
                     
                 Right _         -> return () 
 
-        Left parseError -> lift $ putStrLn parseError
+        Left parseError -> BE.errorRegistration parseError
 
 {- | Given a input stream of tokens, returns a string representation of the AST
  - generated by the parser.
@@ -220,24 +210,19 @@ showAST tks = do
 
     case parseResult of
         Right result    -> lift $ putStrLn $ show result
-        Left parseError -> lift $ putStrLn parseError
-
--- | Given a file and it's related errors, returns a list of error strings.
-getFileErrorString :: String -> Int -> String -> String
-getFileErrorString filename line errorString = 
-    "( " ++ filename ++ ", " ++ show line ++ ", " ++ errorString ++ " )"
+        Left parseError -> BE.errorRegistration parseError
 
 -- | Given input line and a list of errors, returns the correct error string.
-getErrorString :: String -> [Err.TokenError] -> String
-getErrorString inputLine errors =
+getLexerErrorString :: String -> [Err.TokenError] -> String
+getLexerErrorString inputLine errors =
     "ERROR: lexer(" ++ show inputLine ++ ") ==> " ++
     "invalid tokens: [ "
     ++ intercalate " , " (map show errors)
     ++ " ]"
 
 -- | Given input line and a list of errors, returns the correct token string.
-getAcceptationString  :: String -> [Tk.ContextToken] -> String
-getAcceptationString inputLine tokens =
+getLexerAcceptationString  :: String -> [Tk.ContextToken] -> String
+getLexerAcceptationString inputLine tokens =
     "OK: lexer(" ++ show inputLine ++ ") ==> [ " 
     ++ intercalate " , " (map show tokens) ++ " ]"
 

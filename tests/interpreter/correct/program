@@ -1,8 +1,12 @@
+reset()
+
 int a := 4; 
 int b := 2; 
 
 lazy int c := 'a + b' ; 
 
 int d := irandom(10); 
+
+int a := 69; 
 
 if ( d < 8 , fibo(c), gcd(a,b^2) ) 
