@@ -137,7 +137,7 @@ instance WithPosition Type where
 
 instance WithPosition Instruction where
     getPosition a@Inicialization{} = initPos a
-    getPosition a@Assignment{} = initPos a
+    getPosition a@Assignment{} = assignPos a
 
 instance WithPosition Expr where
     getPosition a@IntExp {} = intPos a 

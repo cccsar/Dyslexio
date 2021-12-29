@@ -432,11 +432,11 @@ validateOntoOperator interestingType nArgs errorPos opId xs =
 
 -- | Encapsulated type validation for arithmetic operations.
 validateArithmetic :: Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type)       
-validateArithmetic = validateOntoOperator (dummyReturnInt)
+validateArithmetic = validateOntoOperator dummyReturnInt
 
 -- | Encapsulate type validation for boolean operations.
 validateBoolean :: Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type) 
-validateBoolean = validateOntoOperator (dummyReturnBool)
+validateBoolean = validateOntoOperator dummyReturnBool
 
 -- | Encapsulated type validation for relational operations.
 validateRelational :: Int -> Int -> String -> [Maybe Type] -> BE.GlobalState (Maybe Type)       

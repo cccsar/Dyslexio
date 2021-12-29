@@ -136,7 +136,7 @@ getId tk = case fromJust . stringContent $ tk of
 parseError :: [ContextToken] -> ErrorMonad a
 parseError [] = Failed "Syntax Error"
 parseError (CtxToken { position = p, string = str, tk = token }:xs) = Failed (
-        "Syntax error --> related to \"" 
+        "Error: Related to \"" 
         ++ str ++ "\" at " ++ show p ++ " coming from token: " 
         ++ show token ++ "." 
         )

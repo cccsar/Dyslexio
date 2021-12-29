@@ -51,6 +51,7 @@ choice input = case words input of
     [".reset"]   -> chooseReset 
     (".ast":xs)  -> checkLexErrors (unwords xs) astAction 
     ["."]        -> lift $ exitSuccess
+    []           -> return () 
     _            -> process input 
 
 -- | Implementation of logic for loading a file.
