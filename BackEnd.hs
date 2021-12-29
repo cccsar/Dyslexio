@@ -26,6 +26,7 @@ where
 import Data.Char(isSpace)
 import Data.Maybe (isJust)
 import System.FilePath(FilePath)
+import System.IO (stderr,hPutStrLn)
 import Control.Monad.State
 
 import qualified Data.Map as M
@@ -67,14 +68,14 @@ errorRegistration errorString = do
         Just filename -> do -- ! Print layout when errors appear on a file.
             let fileErrorString = getFileErrorString filename (nextLine ustate) errorString
  
-            lift $ putStrLn fileErrorString
+            lift $ hPutStrLn stderr fileErrorString
  
             -- Update error dictionary with found errors.
             let lineNumber    = nextLine ustate
                 errorContext  = (lineNumber,errorString)
 
             insertDictionaryST filename errorContext
-        _             -> lift $ putStrLn errorString -- ! Print layout when errors are typed directly.
+        _             -> lift $ hPutStrLn stderr errorString -- ! Print layout when errors are typed directly.
 
 -- | Given a file and it's related errors, returns a list of error strings.
 getFileErrorString :: String -> Int -> String -> String

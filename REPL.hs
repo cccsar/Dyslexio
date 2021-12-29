@@ -8,7 +8,7 @@ module REPL
  - helper functions concerning display only.
 -}
 
-import Control.Monad (foldM)
+import Control.Monad (foldM, when)
 import Control.Monad.State
 import Data.Either (partitionEithers)
 import Data.List (intercalate)
@@ -187,8 +187,7 @@ validate tks = do
                 Left listOfAcceptation -> do
                     mapM_ I.execute (A.list (BE.removeCancelledActions resultAst listOfAcceptation)) 
 
-                    if and listOfAcceptation then lift $ putStrLn $ "ACK: " ++ (BE.inputLine ustate)
-                        else lift $ putStrLn $ "Warning: Some actions weren't performed"
+                    when ( or listOfAcceptation ) $ lift $ putStrLn $ "ACK: " ++ (BE.inputLine ustate)
 
                 -- Here are the expressions ### Enhance the semantics and pipeline for this.
                 Right (Just _) -> do

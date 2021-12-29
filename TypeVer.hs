@@ -17,7 +17,6 @@ module TypeVer
 import Control.Monad.State
 import Data.List (intercalate)
 import Data.Maybe (isJust, fromJust)
-import System.IO (hPutStrLn, stderr)
 
 import SymTable as ST
 import AST 
@@ -34,11 +33,10 @@ validateProgram imp@Ex{} = Right <$> validateExpr (expr imp)
 -- | Instructions type validation.
 validateInstruction :: Instruction -> BE.GlobalState Bool
 validateInstruction imp@Inicialization{} = do 
-    ustate <- get
     check <- BE.symbolDefinedST (initId imp)     
 
     if check then do 
-        let errorMsg = (BE.inputLine ustate) ++ ". Symbol for inicialization already defined. Related to inicialization at column " 
+        let errorMsg ="Symbol for inicialization already defined. Related to inicialization at column " 
                        ++ show (getPosition imp) ++ ". Ignoring type validation."
 
         reportTypeError errorMsg
@@ -49,7 +47,7 @@ validateInstruction imp@Inicialization{} = do
      
             case expressionType of 
                 Nothing ->  do
-                    let errorMsg = (BE.inputLine ustate) ++ ". Invalid inicialization types. Related to inicialization at column" 
+                    let errorMsg = "Invalid inicialization types. Related to inicialization at column" 
                                    ++ show  (getPosition imp) ++ ". Found type " 
                                    ++ show  (initType imp) ++ " and a type error for the expression. "
                     
@@ -67,7 +65,7 @@ validateInstruction imp@Inicialization{} = do
                         return True
                     
                     else do 
-                        let errorMsg = (BE.inputLine ustate) ++ ". Invalid inicialization types. Related to inicialization at column " 
+                        let errorMsg = "Invalid inicialization types. Related to inicialization at column " 
                                         ++ show (getPosition imp) ++ ". Found types " 
                                         ++ show (initType imp) ++ " and " ++ show aType 
                                         ++ " , but expected equal types."
@@ -76,7 +74,6 @@ validateInstruction imp@Inicialization{} = do
                         reportTypeError errorMsg
                         return False
 validateInstruction imp@Assignment{} = do
-    ustate <- get
     check <- BE.symbolDefinedST (assignId imp)     
 
     if check then do 
@@ -90,7 +87,7 @@ validateInstruction imp@Assignment{} = do
 
             Right Nothing -> do 
 
-                let errorMsg = (BE.inputLine ustate) ++ ". A function cannot be assigned. Related to assignment at column " ++ show (getPosition imp) 
+                let errorMsg = "A function cannot be assigned. Related to assignment at column " ++ show (getPosition imp) 
                                ++ "."
                             
                 reportTypeError errorMsg
@@ -102,7 +99,7 @@ validateInstruction imp@Assignment{} = do
 
                 case resultExpr of 
                     Nothing ->  do
-                        let errorMsg = (BE.inputLine ustate) ++ ". Invalid assignment types. Related to assignment at column" 
+                        let errorMsg = "Invalid assignment types. Related to assignment at column" 
                                        ++ show  (getPosition imp) ++ ". Found type " 
                                        ++ show aSymbolType ++ " and a type error for the assignment expression. "
                         
@@ -111,7 +108,7 @@ validateInstruction imp@Assignment{} = do
                     Just expressionType -> 
                         if aSymbolType `relaxedTypeEquality` expressionType then return True 
                         else do 
-                            let errorMsg = (BE.inputLine ustate) ++ ". Invalid Assignment. Related to assignment at column" 
+                            let errorMsg = "Invalid Assignment. Related to assignment at column" 
                                            ++ show (getPosition imp) ++ ". Variable '" 
                                            ++ assignId imp ++ "' has not been defined."
 
@@ -119,7 +116,7 @@ validateInstruction imp@Assignment{} = do
                             return False
 
     else do
-        let errorMsg = (BE.inputLine ustate) ++ ". Invalid assignment. Related to assignment at column " ++ show (getPosition imp) 
+        let errorMsg = "Invalid assignment. Related to assignment at column " ++ show (getPosition imp) 
                        ++ ". Symbol '" ++ assignId imp ++ "' has not been defined. Ignoring type validation."
 
         reportTypeError errorMsg
@@ -130,21 +127,22 @@ validateExpr :: Expr -> BE.GlobalState (Maybe Type)
 validateExpr imp@Identifier {} = do 
     result <- BE.getSymbolTypeST (idName imp) 
     case result of 
-        Left errorMsg            -> do  
+        Left errorMsg                   -> do  
             reportTypeError errorMsg
             return Nothing
-        Right Nothing            -> do 
+        Right Nothing                   -> do 
             let errorMessage = "Invalid name for an identifier. Identifiers cannot have names already given to "
                                 ++ "predefined functions. Related to identifier at column " ++ show (idPos imp) ++ "."
             reportTypeError errorMessage
             return Nothing
         Right (Just Lazy{tp=something}) -> return $ Just dummyReturnInt{tp=something}
-        Right someType           -> return someType
+        Right someType                  -> return someType
         
 validateExpr imp@Function {} = do 
     check <- BE.symbolDefinedST (functionName imp)
 
     if check then do 
+        
         case functionName imp of 
             "if"      -> case functionArguments imp of 
                 [boolExpr, sucExpr, failExpr] -> do 
@@ -254,7 +252,7 @@ validateExpr imp@Function {} = do
 
             "reset"   -> case functionArguments imp of 
 
-                [] -> return $ Just (dummyReturnBool )
+                [] -> return $ Just dummyReturnBool
                 _ -> reportInvalidNArgs 0 (functionPos imp) "reset"
 
             "irandom" -> case functionArguments imp of 
@@ -264,7 +262,7 @@ validateExpr imp@Function {} = do
                     result <- validateExpr expression 
                     case result of 
                         Nothing                  -> return Nothing
-                        Just Concrete {tp=Int{}} -> return $ Just (dummyReturnInt)
+                        Just Concrete {tp=Int{}} -> return $ Just dummyReturnInt
                         Just other               -> reportInvalidFunctionArgs (functionPos imp) "irandom" [dummyReturnInt] [other]
                 _ -> reportInvalidNArgs 1 (functionPos imp) "irandom"
 
@@ -307,10 +305,10 @@ validateExpr imp@Function {} = do
                 _ -> reportInvalidNArgs 0 (functionPos imp) "now"
             _ -> undefined
 
-        else do 
-            let errorMsg = functionName imp ++ " is not a Dyslexio reckognized function."
-            reportTypeError errorMsg 
-            return Nothing
+    else do 
+        let errorMsg = functionName imp ++ " is not a Dyslexio reckognized function."
+        reportTypeError errorMsg 
+        return Nothing
 validateExpr IntExp{}  = return $ Just dummyReturnInt 
 validateExpr BoolExp{} = return $ Just dummyReturnBool 
 validateExpr imp@LazyExp{} = do 
@@ -469,8 +467,10 @@ lse `relaxedTypeEquality` rse = case lse of
 
 -- | Generic type error report.
 reportTypeError :: String -> BE.GlobalState() 
-reportTypeError msg = lift $ hPutStrLn stderr (tpPrefix ++ msg)
-    where tpPrefix = "Error: "
+reportTypeError msg = do 
+    ustate <- get
+    let tpPrefix = "Error: "
+    BE.errorRegistration (tpPrefix ++ "\"" ++ BE.inputLine ustate ++ "\" Type Error: " ++ msg)
 
 -- | Report for invalid number of arguments of a predefined function.
 reportInvalidNArgs :: Int -> Int -> String -> BE.GlobalState (Maybe Type)
