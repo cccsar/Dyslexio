@@ -299,6 +299,40 @@ validateExpr imp@Function {} = do
                             reportInvalidFunctionArgs (functionPos imp) "gcd" goodTypes [bad1,bad2]
                         (_, _)                                                                -> return Nothing
                 _ -> reportInvalidNArgs 2 (functionPos imp) "gcd"
+                
+            "max"     -> case functionArguments imp of 
+
+                [exprN, exprM] -> do
+                    a <- validateExpr exprN 
+                    b <- validateExpr exprM
+
+                    let intTypeResult = Just dummyReturnInt 
+
+                    case (a,b) of 
+                        (Just Concrete {tp = Int{}}, Just Concrete {tp = Int {}} ) -> return intTypeResult
+                        (Just bad1, Just bad2)                                                -> do
+                            let goodTypes = [ dummyReturnInt, dummyReturnInt ]
+
+                            reportInvalidFunctionArgs (functionPos imp) "max" goodTypes [bad1,bad2]
+                        (_, _)                                                                -> return Nothing
+                _ -> reportInvalidNArgs 2 (functionPos imp) "max"
+
+            "min"     -> case functionArguments imp of 
+
+                [exprN, exprM] -> do
+                    a <- validateExpr exprN 
+                    b <- validateExpr exprM
+
+                    let intTypeResult = Just dummyReturnInt 
+
+                    case (a,b) of 
+                        (Just Concrete {tp = Int{}}, Just Concrete {tp = Int {}} ) -> return intTypeResult
+                        (Just bad1, Just bad2)                                                -> do
+                            let goodTypes = [ dummyReturnInt, dummyReturnInt ]
+
+                            reportInvalidFunctionArgs (functionPos imp) "min" goodTypes [bad1,bad2]
+                        (_, _)                                                                -> return Nothing
+                _ -> reportInvalidNArgs 2 (functionPos imp) "min"
 
             "now"     -> case functionArguments imp of 
                 [] -> return $ Just dummyReturnInt

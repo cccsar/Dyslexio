@@ -104,6 +104,8 @@ predefinedSymbols = [
     "irandom", 
     "fibo", 
     "gcd",
+    "max",
+    "min",
     "now" ]
 
 -- | Initial symbolTable to work with
