@@ -141,3 +141,5 @@ Dislexio's interpreter can evaluate any expression covered in the grammar showed
 * ```fibo(n) ```: Returns the fibonacci number corresponding to n. The argument n must be or evaluate to a non negative integer, otherwise Dislexio will throw an error.
 * ```gcd(<exp>, <exp1>) ```: Returns the greatest common divisor of <exp> and <exp1>. Both <exp> and <exp1> must be or evaluate to an integer, otherwise Dislexio will throw an error.
 * ```now()```: Returns an integer corresponding to the time in milliseconds elapsed from the Unix epoch (00:00:00 UTC on 1 January 1970).
+* ```max(<exp>, <exp1>) ```: Returns the maximum <exp> and <exp1>. Both <exp> and <exp1> must be or evaluate to an integer, otherwise Dislexio will throw an error.
+* ```min(<exp>, <exp1>) ```: Returns the minimum between <exp> and <exp1>. Both <exp> and <exp1> must be or evaluate to an integer, otherwise Dislexio will throw an error.
