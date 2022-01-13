@@ -143,3 +143,4 @@ Dislexio's interpreter can evaluate any expression covered in the grammar showed
 * ```now()```: Returns an integer corresponding to the time in milliseconds elapsed from the Unix epoch (00:00:00 UTC on 1 January 1970).
 * ```max(<exp>, <exp1>) ```: Returns the maximum <exp> and <exp1>. Both <exp> and <exp1> must be or evaluate to an integer, otherwise Dislexio will throw an error.
 * ```min(<exp>, <exp1>) ```: Returns the minimum between <exp> and <exp1>. Both <exp> and <exp1> must be or evaluate to an integer, otherwise Dislexio will throw an error.
+* ```lcm(<exp>, <exp1>) ```: Returns the least common multiple of <exp> and <exp1>. Both <exp> and <exp1> must be or evaluate to an integer, otherwise Dislexio will throw an error.
