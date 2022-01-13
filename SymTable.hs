@@ -34,7 +34,7 @@ data Result
     | INT Int
     | LAZY A.Expr 
     -- Reflexive type results
-    | REFXTYPE A.ConcreteType
+    | REFXTYPE A.Type
     | LTYPE A.Type
     -- void result for functions
     | VOID 
@@ -104,6 +104,9 @@ predefinedSymbols = [
     "irandom", 
     "fibo", 
     "gcd",
+    "max",
+    "min",
+    "lcm",
     "now" ]
 
 -- | Initial symbolTable to work with
