@@ -334,6 +334,23 @@ validateExpr imp@Function {} = do
                         (_, _)                                                                -> return Nothing
                 _ -> reportInvalidNArgs 2 (functionPos imp) "min"
 
+            "lcm"     -> case functionArguments imp of 
+
+                [exprN, exprM] -> do
+                    a <- validateExpr exprN 
+                    b <- validateExpr exprM
+
+                    let intTypeResult = Just dummyReturnInt 
+
+                    case (a,b) of 
+                        (Just Concrete {tp = Int{}}, Just Concrete {tp = Int {}} ) -> return intTypeResult
+                        (Just bad1, Just bad2)                                                -> do
+                            let goodTypes = [ dummyReturnInt, dummyReturnInt ]
+
+                            reportInvalidFunctionArgs (functionPos imp) "lcm" goodTypes [bad1,bad2]
+                        (_, _)                                                                -> return Nothing
+                _ -> reportInvalidNArgs 2 (functionPos imp) "lcm"
+
             "now"     -> case functionArguments imp of 
                 [] -> return $ Just dummyReturnInt
                 _ -> reportInvalidNArgs 0 (functionPos imp) "now"

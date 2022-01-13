@@ -106,6 +106,7 @@ predefinedSymbols = [
     "gcd",
     "max",
     "min",
+    "lcm",
     "now" ]
 
 -- | Initial symbolTable to work with

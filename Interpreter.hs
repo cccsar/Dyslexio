@@ -184,7 +184,19 @@ eval imp@Function {}    = case functionName imp of
                 case (resultA, resultB) of 
                     (INT n, INT m) -> return $ INT (min n m)
                     _              -> unexpectedFunctionError "min" 
-            _ -> unexpectedFunctionError "min" 
+            _ -> unexpectedFunctionError "min"     
+
+    "lcm" -> do
+        case functionArguments imp of 
+            [expA, expB] -> do
+
+                resultA <- eval expA
+                resultB <- eval expB
+      
+                case (resultA, resultB) of 
+                    (INT n, INT m) -> return $ INT (lcm n m)
+                    _              -> unexpectedFunctionError "lcm" 
+            _ -> unexpectedFunctionError "lcm" 
 
     "now" -> do 
         unixTime <- lift $ getPOSIXTime
