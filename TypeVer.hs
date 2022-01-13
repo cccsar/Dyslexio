@@ -178,7 +178,6 @@ validateExpr imp@Function {} = do
 
                     case result of
                         Nothing -> return Nothing
-                        Just Lazy {tp=someType} -> return $ Just $ dummyReturnInt{tp=someType}
                         Just something          -> return $ Just something
                 _ -> reportInvalidNArgs 1 (functionPos imp) "type" 
 

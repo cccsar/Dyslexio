@@ -100,7 +100,7 @@ eval imp@Function {}    = case functionName imp of
                 result <- TV.validateExpr arg 
       
                 case result of 
-                    Just content -> return $ REFXTYPE (tp content)
+                    Just content -> return $ REFXTYPE content
                     _ -> unexpectedFunctionError "type"
             _ -> unexpectedFunctionError "type"
     "ltype" -> do 
