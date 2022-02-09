@@ -1,6 +1,6 @@
 # Dyslexio
 
-Interpreter for the LIPS programming language for the subject CI-3725 : Translators and Interpreters
+Interpreter for the LIPS programming language for the subject *Translators and Interpreters* - CI-3725.
 
 ## Required installations
 
