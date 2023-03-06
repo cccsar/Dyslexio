@@ -1,6 +1,6 @@
 Dyxlexio: 	
 	alex Lexer.x && happy Parser.y && ghc -Wall -Wcompat -Widentities -Wincomplete-uni-patterns \
-		-Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists \
+		-Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -package random \
 		Main.hs
 
 clean:
